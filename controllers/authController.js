@@ -32,6 +32,8 @@ exports.register = async (req, res) => {
       role: role || "user"
     });
 
+    //TODO: Check Email Validation Then if not validated send fail if authonticvated successfully send 201 \
+    
     await user.save();
     res.status(201).json({ message: "User registered successfully" });
 

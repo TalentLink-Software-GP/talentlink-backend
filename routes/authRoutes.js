@@ -3,12 +3,11 @@ const { register, login } = require("../controllers/authController");
 const { registerUser, verifyEmail } = require('../controllers/authController');
 
 const User= require("../models/User");
-router.post('/register', registerUser);
 
-router.get('/verify-email/:token', verifyEmail);
 
 const router = express.Router();
-
+//TODO: Add swagger docs for this route 
+router.get('/verify-email/:token', verifyEmail);
 /**
  * @swagger
  * components:
