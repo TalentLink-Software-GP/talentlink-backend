@@ -1,5 +1,11 @@
 const express = require("express");
 const { register, login } = require("../controllers/authController");
+const { registerUser, verifyEmail } = require('../controllers/authController');
+
+const User= require("../models/User");
+router.post('/register', registerUser);
+
+router.get('/verify-email/:token', verifyEmail);
 
 const router = express.Router();
 
@@ -81,5 +87,9 @@ router.post("/register", register);
  *         description: Invalid credentials
  */
 router.post("/login", login);
+router.post("verifyEmail",verifyEmail);
+
+
+
 
 module.exports = router;

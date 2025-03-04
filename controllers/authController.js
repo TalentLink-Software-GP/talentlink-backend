@@ -71,3 +71,48 @@ exports.login = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+ exports.verifyEmail = async (req, res) => {
+  const { token } = req.params;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid token' });
+    }
+
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    await user.save();
+
+    res.status(200).json({ message: 'Email verified successfully' });
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid or expired token' });
+  }
+};
+
+
+// router.post("/signUp", async(res,req)=>{
+// try
+// {
+//     const { firstName, lastName, username, email, phone, password } = req.body;
+//     let userExists = await User.findOne({ email });
+//     if (userExists)
+//     {
+//         return res.status(400).json({ message: "Email already registered" });
+//     }
+//     const salt = await bcrypt.genSalt(10);
+//     const hashedPassword = await bcrypt.hash(password, salt);
+//     const newUser = new User({ firstName, lastName, username, email, phone, password: hashedPassword });
+//     await newUser.save();
+//     const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+//     res.status(201).json({ message: "successfully", token });
+// }
+// catch(error){
+//     res.status(500).json({ message: "Server error", error });
+
+// }
+
+// });
