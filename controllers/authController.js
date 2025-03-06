@@ -2,14 +2,17 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const sendEmail = require("../utils/sendEmail");
 
-// Register User
-exports.register = async (req, res) => {
+const PORT = process.env.PORT || 5000;
+
+// ✅ Fix: Define and export register function
+const register = async (req, res) => {
   try {
     const { name, username, email, phone, password, role } = req.body;
 
-    // Validate fields
-    if (!name || !username || !email || !phone || !password) {
+    // Validate required fields
+    if (!name || !username || !email || !phone || !password || !role) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
@@ -19,31 +22,68 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: "User already exists" });
     }
 
-    // Hash Password
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
+    // Create user instance
     const user = new User({
       name,
       username,
       email,
       phone,
       password: hashedPassword,
-      role: role || "user"
+      role: role || "user",
+      isVerified: false, // Ensure new users are unverified
     });
 
-    //TODO: Check Email Validation Then if not validated send fail if authonticvated successfully send 201 \
-    
-    await user.save();
-    res.status(201).json({ message: "User registered successfully" });
+    // Generate verification token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "35h",
+    });
 
+    // Send verification email
+    const verificationUrl = `http://localhost:${PORT}/api/auth/verify-email/${token}`;
+    await sendEmail(user.email, "Verify Your Email", `Click this link to verify: ${verificationUrl}`);
+
+    await user.save();
+
+    res.status(201).json({ message: "User registered. Please verify your email." });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Login User
-exports.login = async (req, res) => {
+// ✅ Fix: Define and export verifyEmail function
+const verifyEmail = async (req, res) => {
+  const { token } = req.params;
+
+  try {
+    // Verify the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Find the user
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(400).json({ error: "Invalid or expired token" });
+    }
+
+    // If already verified, prevent duplicate updates
+    if (user.isVerified) {
+      return res.status(400).json({ error: "Email already verified" });
+    }
+
+    // Mark user as verified
+    user.isVerified = true;
+    await user.save();
+
+    res.status(200).json({ message: "Email verified successfully" });
+  } catch (error) {
+    res.status(400).json({ error: "Invalid or expired token" });
+  }
+};
+
+// ✅ Fix: Define and export login function
+const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -54,6 +94,11 @@ exports.login = async (req, res) => {
 
     // Find user by email
     const user = await User.findOne({ email });
+    if(!user.isVerified)
+{
+  return res.status(400).json({ error: "email is not Verified" });
+
+}
     if (!user) {
       return res.status(400).json({ error: "Invalid credentials" });
     }
@@ -74,47 +119,9 @@ exports.login = async (req, res) => {
   }
 };
 
- exports.verifyEmail = async (req, res) => {
-  const { token } = req.params;
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid token' });
-    }
-
-    user.isVerified = true;
-    user.verificationToken = undefined;
-    await user.save();
-
-    res.status(200).json({ message: 'Email verified successfully' });
-  } catch (error) {
-    res.status(400).json({ message: 'Invalid or expired token' });
-  }
+// ✅ Fix: Export all functions
+module.exports = {
+  register,
+  verifyEmail,
+  login,
 };
-
-
-// router.post("/signUp", async(res,req)=>{
-// try
-// {
-//     const { firstName, lastName, username, email, phone, password } = req.body;
-//     let userExists = await User.findOne({ email });
-//     if (userExists)
-//     {
-//         return res.status(400).json({ message: "Email already registered" });
-//     }
-//     const salt = await bcrypt.genSalt(10);
-//     const hashedPassword = await bcrypt.hash(password, salt);
-//     const newUser = new User({ firstName, lastName, username, email, phone, password: hashedPassword });
-//     await newUser.save();
-//     const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-//     res.status(201).json({ message: "successfully", token });
-// }
-// catch(error){
-//     res.status(500).json({ message: "Server error", error });
-
-// }
-
-// });

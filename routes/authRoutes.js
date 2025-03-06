@@ -1,13 +1,10 @@
 const express = require("express");
-const { register, login } = require("../controllers/authController");
-const { registerUser, verifyEmail } = require('../controllers/authController');
-
-const User= require("../models/User");
-
+const { register, login, verifyEmail } = require("../controllers/authController");
+const User = require("../models/User");
 
 const router = express.Router();
-//TODO: Add swagger docs for this route 
-router.get('/verify-email/:token', verifyEmail);
+
+// TODO: Add Swagger docs for this route
 /**
  * @swagger
  * components:
@@ -86,9 +83,26 @@ router.post("/register", register);
  *         description: Invalid credentials
  */
 router.post("/login", login);
-router.post("verifyEmail",verifyEmail);
 
-
-
+/**
+ * @swagger
+ * /api/auth/verify-email/{token}:
+ *   get:
+ *     summary: Verify a user's email
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: JWT verification token sent via email
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *       400:
+ *         description: Invalid or expired token
+ */
+router.get("/verify-email/:token", verifyEmail);
 
 module.exports = router;
