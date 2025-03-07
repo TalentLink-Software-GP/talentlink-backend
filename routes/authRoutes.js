@@ -1,5 +1,5 @@
 const express = require("express");
-const { register, login, verifyEmail } = require("../controllers/authController");
+const { register, login, verifyEmail,emailFornewPassword,verifyResetCode,setNewPassword } = require("../controllers/authController");
 const User = require("../models/User");
 
 const router = express.Router();
@@ -104,5 +104,9 @@ router.post("/login", login);
  *         description: Invalid or expired token
  */
 router.get("/verify-email/:token", verifyEmail);
+
+router.post("/forgot-password",emailFornewPassword);
+router.post("/verify-reset-code",verifyResetCode);
+router.post("/set-new-password",setNewPassword)
 
 module.exports = router;

@@ -3,10 +3,11 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const sendEmail = require("../utils/sendEmail");
+const crypto = require("crypto");
+
 
 const PORT = process.env.PORT || 5000;
 
-// ✅ Fix: Define and export register function
 const register = async (req, res) => {
   try {
     const { name, username, email, phone, password, role } = req.body;
@@ -94,6 +95,7 @@ const login = async (req, res) => {
 
     // Find user by email
     const user = await User.findOne({ email });
+    
     if(!user.isVerified)
 {
   return res.status(400).json({ error: "email is not Verified" });
@@ -119,9 +121,111 @@ const login = async (req, res) => {
   }
 };
 
+const emailFornewPassword= async(req,res)=>{
+  try{
+    // console.log("awwad1");
+
+    const {email}=req.body;
+
+    console.log("The",email);
+    //const user=await User.findOne(email);
+    const user = await User.findOne({ email });
+
+    
+
+    if(!user){
+      // console.log("awwa4");
+
+      return res.status(404).json({ message: "no email found, try again" });
+    }
+    // console.log("awwad5");
+
+    const resetCode = crypto.randomInt(100000, 999999).toString();
+    // console.log("awwa6");
+
+    user.resetCode = resetCode;  
+    // console.log("awwa7");
+
+    user.resetCodeExpires = Date.now() + 10 * 60 * 1000;
+    await user.save();
+
+
+    await sendEmail(user.email, " Password Reset Code", `Your password reset code is: ${resetCode}. It expires in 10 minutes.`);
+    res.status(200).json({ message: "sent succes" });
+
+  }
+  catch(error){
+    res.status(500).json({ error: error.message });
+
+  }
+
+
+};
+const verifyResetCode =async(req,res)=>{
+
+  const { email, resetCode } = req.body;
+
+  const user = await User.findOne({ email: email });
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  if (user.resetCode === resetCode) {
+    return res.status(200).json({ message: "Reset code is correct. You can now reset your password." });
+  } else {
+    return res.status(400).json({ message: "Invalid reset code" });
+  }
+
+
+}
+const setNewPassword = async (req, res) => {
+  console.log("awwad1");
+
+  try {
+    const { email, password } = req.body;
+    console.log(email);
+    console.log("awwad2");
+
+    const user = await User.findOne({ email });
+    console.log("awwad3");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    try {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      user.password = hashedPassword;
+    } catch (hashError) {
+      console.error("Error hashing password:", hashError);
+      return res.status(500).json({ error: "Error hashing password" });
+    }
+
+    user.resetCode = undefined;
+    console.log("awwad5");
+
+    user.resetCodeExpires = undefined;
+    console.log("awwad6");
+
+    await user.save();
+    console.log("awwad7");
+
+    res.status(200).json({ message: "Password updated successfully" });
+    console.log("awwad8");
+  } catch (error) {
+    console.error("Error in setNewPassword:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
 // ✅ Fix: Export all functions
 module.exports = {
   register,
   verifyEmail,
   login,
+  emailFornewPassword,
+  verifyResetCode,
+  setNewPassword,
 };
