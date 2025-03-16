@@ -50,6 +50,22 @@ const router = express.Router();
  *         description: User registered successfully, email verification required
  *       400:
  *         description: User already exists or invalid input
+ * 
+ * /api/skills:
+ *   post:
+ *     summary: Add skills for a user
+ *     tags: [Skills]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Skills'
+ *     responses:
+ *       201:
+ *         description: Skills added successfully
+ *       400:
+ *         description: Invalid input or exceeded skill limit
  */
 router.post("/register", register);
 
