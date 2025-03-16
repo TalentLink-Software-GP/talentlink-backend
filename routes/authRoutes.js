@@ -35,6 +35,23 @@ const router = express.Router();
  *           enum: [admin, organization, freelancer, user]
  *           default: user
  * 
+ *     Skills:
+ *       type: object
+ *       required:
+ *         - userId
+ *         - skills
+ *       properties:
+ *         userId:
+ *           type: string
+ *           format: uuid
+ *           description: The ID of the user associated with the skills.
+ *         skills:
+ *           type: array
+ *           items:
+ *             type: string
+ *           maxItems: 100
+ *           description: A list of up to 100 skills for the user.
+ *
  * /api/auth/register:
  *   post:
  *     summary: Register a new user
@@ -50,6 +67,22 @@ const router = express.Router();
  *         description: User registered successfully, email verification required
  *       400:
  *         description: User already exists or invalid input
+ * 
+ * /api/skills:
+ *   post:
+ *     summary: Add skills for a user
+ *     tags: [Skills]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Skills'
+ *     responses:
+ *       201:
+ *         description: Skills added successfully
+ *       400:
+ *         description: Invalid input or exceeded skill limit
  */
 router.post("/register", register);
 

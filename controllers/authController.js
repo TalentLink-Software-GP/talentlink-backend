@@ -12,21 +12,17 @@ const register = async (req, res) => {
   try {
     const { name, username, email, phone, password, role } = req.body;
 
-    // Validate required fields
     if (!name || !username || !email || !phone || !password || !role) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    // Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: "User already exists" });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user instance
     const user = new User({
       name,
       username,
@@ -34,15 +30,13 @@ const register = async (req, res) => {
       phone,
       password: hashedPassword,
       role: role || "user",
-      isVerified: false, // Ensure new users are unverified
+      isVerified: false,
     });
 
-    // Generate verification token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "35h",
     });
 
-    // Send verification email
     const verificationUrl = `http://localhost:${PORT}/api/auth/verify-email/${token}`;
     await sendEmail(user.email, "Verify Your Email", `Click this link to verify: ${verificationUrl}`);
 
@@ -54,26 +48,21 @@ const register = async (req, res) => {
   }
 };
 
-// ✅ Fix: Define and export verifyEmail function
 const verifyEmail = async (req, res) => {
   const { token } = req.params;
 
   try {
-    // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Find the user
     const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(400).json({ error: "Invalid or expired token" });
     }
 
-    // If already verified, prevent duplicate updates
     if (user.isVerified) {
       return res.status(400).json({ error: "Email already verified" });
     }
 
-    // Mark user as verified
     user.isVerified = true;
     await user.save();
 
@@ -83,17 +72,14 @@ const verifyEmail = async (req, res) => {
   }
 };
 
-// ✅ Fix: Define and export login function
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate input
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
-    // Find user by email
     const user = await User.findOne({ email });
     
     if(!user.isVerified)
@@ -105,13 +91,11 @@ const login = async (req, res) => {
       return res.status(400).json({ error: "Invalid credentials" });
     }
 
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ error: "Invalid credentials" });
     }
 
-    // Generate JWT Token
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
     res.status(200).json({ message: "Login successful", token });
@@ -123,28 +107,20 @@ const login = async (req, res) => {
 
 const emailFornewPassword= async(req,res)=>{
   try{
-    // console.log("awwad1");
-
     const {email}=req.body;
 
     console.log("The",email);
-    //const user=await User.findOne(email);
     const user = await User.findOne({ email });
 
     
 
     if(!user){
-      // console.log("awwa4");
-
       return res.status(404).json({ message: "no email found, try again" });
     }
-    // console.log("awwad5");
 
     const resetCode = crypto.randomInt(100000, 999999).toString();
-    // console.log("awwa6");
 
     user.resetCode = resetCode;  
-    // console.log("awwa7");
 
     user.resetCodeExpires = Date.now() + 10 * 60 * 1000;
     await user.save();
@@ -219,8 +195,6 @@ const setNewPassword = async (req, res) => {
   }
 };
 
-
-// ✅ Fix: Export all functions
 module.exports = {
   register,
   verifyEmail,
