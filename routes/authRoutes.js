@@ -1,10 +1,7 @@
 const express = require("express");
-const { register, login, verifyEmail,emailFornewPassword,verifyResetCode,setNewPassword } = require("../controllers/authController");
-const User = require("../models/User");
-
+const { register, login, verifyEmail, emailFornewPassword, verifyResetCode, setNewPassword } = require("../controllers/authController");
 const router = express.Router();
 
-// TODO: Add Swagger docs for this route
 /**
  * @swagger
  * components:
@@ -37,10 +34,7 @@ const router = express.Router();
  *           type: string
  *           enum: [admin, organization, freelancer, user]
  *           default: user
- */
-
-/**
- * @swagger
+ * 
  * /api/auth/register:
  *   post:
  *     summary: Register a new user
@@ -53,7 +47,7 @@ const router = express.Router();
  *             $ref: '#/components/schemas/User'
  *     responses:
  *       201:
- *         description: User registered successfully
+ *         description: User registered successfully, email verification required
  *       400:
  *         description: User already exists or invalid input
  */
@@ -80,7 +74,7 @@ router.post("/register", register);
  *       200:
  *         description: Login successful, returns JWT token
  *       400:
- *         description: Invalid credentials
+ *         description: Invalid credentials or email not verified
  */
 router.post("/login", login);
 
@@ -105,8 +99,77 @@ router.post("/login", login);
  */
 router.get("/verify-email/:token", verifyEmail);
 
-router.post("/forgot-password",emailFornewPassword);
-router.post("/verify-reset-code",verifyResetCode);
-router.post("/set-new-password",setNewPassword)
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Request password reset
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password reset code sent successfully
+ *       404:
+ *         description: Email not found
+ */
+router.post("/forgot-password", emailFornewPassword);
+
+/**
+ * @swagger
+ * /api/auth/verify-reset-code:
+ *   post:
+ *     summary: Verify password reset code
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               resetCode:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Reset code verified successfully
+ *       400:
+ *         description: Invalid reset code
+ */
+router.post("/verify-reset-code", verifyResetCode);
+
+/**
+ * @swagger
+ * /api/auth/set-new-password:
+ *   post:
+ *     summary: Set a new password
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password updated successfully
+ *       404:
+ *         description: User not found
+ */
+router.post("/set-new-password", setNewPassword);
 
 module.exports = router;
