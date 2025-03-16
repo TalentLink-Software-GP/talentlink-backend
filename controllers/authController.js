@@ -156,15 +156,11 @@ const verifyResetCode =async(req,res)=>{
 
 }
 const setNewPassword = async (req, res) => {
-  console.log("awwad1");
-
   try {
     const { email, password } = req.body;
     console.log(email);
-    console.log("awwad2");
 
     const user = await User.findOne({ email });
-    console.log("awwad3");
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -179,16 +175,12 @@ const setNewPassword = async (req, res) => {
     }
 
     user.resetCode = undefined;
-    console.log("awwad5");
 
     user.resetCodeExpires = undefined;
-    console.log("awwad6");
 
     await user.save();
-    console.log("awwad7");
 
     res.status(200).json({ message: "Password updated successfully" });
-    console.log("awwad8");
   } catch (error) {
     console.error("Error in setNewPassword:", error);
     res.status(500).json({ error: error.message });

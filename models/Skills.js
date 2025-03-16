@@ -1,20 +1,18 @@
-const mongoose = require("mongoose");
-const { validate } = require("./User");
+const mongoose = require('mongoose');
 
 const skillsSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'User'
+  },
+  skills: {
+    type: [String],
+    required: true,
+    maxItems: 100
+  }
+});
 
-    userID: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: false
-    },
-    skills: {
-        type: [string],
-        validate: [arrayLimit, "Skills list exceeds the limit of 100"]
-    }
+const Skills = mongoose.model('Skills', skillsSchema);
 
-})
-
-function arrayLimit(val) {
-    return val.length <= 100;
-}
+module.exports = Skills;

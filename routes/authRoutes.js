@@ -35,23 +35,6 @@ const router = express.Router();
  *           enum: [admin, organization, freelancer, user]
  *           default: user
  * 
- *     Skills:
- *       type: object
- *       required:
- *         - userId
- *         - skills
- *       properties:
- *         userId:
- *           type: string
- *           format: uuid
- *           description: The ID of the user associated with the skills.
- *         skills:
- *           type: array
- *           items:
- *             type: string
- *           maxItems: 100
- *           description: A list of up to 100 skills for the user.
- *
  * /api/auth/register:
  *   post:
  *     summary: Register a new user
