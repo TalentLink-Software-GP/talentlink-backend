@@ -10,9 +10,15 @@ const userSchema = new mongoose.Schema({
     resetCode:{type: String },
     role: { 
       type: String, 
-      enum: ["admin", "organization", "freelancer", "user"], 
-      default: "user" 
+      enum: ["admin", "Organization", "Freelancer", "Job Seeker", ], 
+      // default: "jobseeker" 
     },
+    date: { type: Date, required: false },
+    country:{type: String,required:false},
+    city:{type: String,required:false},
+    gender:{type: String,required:false},
+
+
     createdAt: { type: Date, default: Date.now },
   });
   

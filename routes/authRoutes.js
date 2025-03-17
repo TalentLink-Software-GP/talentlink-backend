@@ -1,5 +1,5 @@
 const express = require("express");
-const { register, login, verifyEmail, emailFornewPassword, verifyResetCode, setNewPassword } = require("../controllers/authController");
+const { register, login, verifyEmail, emailFornewPassword, verifyResetCode, setNewPassword,isverifyd } = require("../controllers/authController");
 const router = express.Router();
 
 /**
@@ -187,5 +187,8 @@ router.post("/verify-reset-code", verifyResetCode);
  *         description: User not found
  */
 router.post("/set-new-password", setNewPassword);
+
+
+router.get("/isVerified/:email",isverifyd);
 
 module.exports = router;
