@@ -1,77 +1,133 @@
 const Skills = require("../models/Skills");
 
+const addSkills = async (req, res) => {
+  const { skills } = req.body;
+  const userId = req.user.id; // Get user ID from token
 
-exports.getUserSkills = async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const skills = await Skills.findOne({ userId });
+  try {
+    let userSkills = await Skills.findOne({ userId });
 
-        if (!skills) {
-            return res.status(404).json({ message: "No skills found for this user." });
-        }
-
-        res.status(200).json(skills);
-    } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message });
+    if (!userSkills) {
+      userSkills = new Skills({ userId, skills: [], education: [] });
     }
+
+    userSkills.skills.push(...skills);
+    await userSkills.save();
+
+    res.status(201).json({ message: "Skills added successfully", skills: userSkills.skills });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
-exports.addUserSkills = async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const { skills } = req.body;
+const addEducation = async (req, res) => {
+  const { education } = req.body;
+  const userId = req.user.id; // Get user ID from token
 
-        if (!Array.isArray(skills) || skills.length === 0) {
-            return res.status(400).json({ message: "Skills must be a non-empty array." });
-        }
+  try {
+    let userEducation = await Skills.findOne({ userId });
 
-        let userSkills = await Skills.findOne({ userId });
-
-        if (userSkills) {
-            userSkills.skills = [...new Set([...userSkills.skills, ...skills])];
-
-            if (userSkills.skills.length > 100) {
-                return res.status(400).json({ message: "Skill list cannot exceed 100 skills." });
-            }
-
-            await userSkills.save();
-            return res.status(200).json({ message: "Skills updated successfully", skills: userSkills.skills });
-        } else {
-            const newSkills = new Skills({ userId, skills });
-            await newSkills.save();
-            return res.status(201).json({ message: "Skills added successfully", skills: newSkills.skills });
-        }
-    } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message });
+    if (!userEducation) {
+      userEducation = new Skills({ userId, skills: [], education: [] });
     }
+
+    userEducation.education.push(...education);
+    await userEducation.save();
+
+    res.status(201).json({ message: "Education added successfully", education: userEducation.education });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
-exports.deleteSkill = async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const { skill } = req.body;
+const deleteSkill = async (req, res) => {
+  const { skill } = req.body;
+  const userId = req.user.id; // Get user ID from token
 
-        if (!skill) {
-            return res.status(400).json({ message: "Skill name is required." });
-        }
+  try {
+    const userSkills = await Skills.findOneAndUpdate(
+      { userId },
+      { $pull: { skills: skill } },
+      { new: true }
+    );
 
-        let userSkills = await Skills.findOne({ userId });
-
-        if (!userSkills) {
-            return res.status(404).json({ message: "No skills found for this user." });
-        }
-
-        const updatedSkills = userSkills.skills.filter(s => s.toLowerCase() !== skill.toLowerCase());
-
-        if (updatedSkills.length === userSkills.skills.length) {
-            return res.status(404).json({ message: "Skill not found in the user's list." });
-        }
-
-        userSkills.skills = updatedSkills;
-        await userSkills.save();
-
-        res.status(200).json({ message: "Skill removed successfully", skills: userSkills.skills });
-    } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message });
+    if (!userSkills) {
+      return res.status(404).json({ error: "Skill not found" });
     }
+
+    res.status(200).json({ message: "Skill deleted successfully", skills: userSkills.skills });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
+
+const deleteEducation = async (req, res) => {
+  const { education } = req.body;
+  const userId = req.user.id; // Get user ID from token
+
+  try {
+    const userEducation = await Skills.findOneAndUpdate(
+      { userId },
+      { $pull: { education: education } },
+      { new: true }
+    );
+
+    if (!userEducation) {
+      return res.status(404).json({ error: "Education not found" });
+    }
+
+    res.status(200).json({ message: "Education deleted successfully", education: userEducation.education });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getAllSkills = async (req, res) => {
+  const userId = req.user.id; // Get user ID from token
+
+  try {
+    const user = await Skills.findOne({ userId });
+
+    if (!user) {
+      return res.status(404).json({ skills: [] });
+    }
+
+    res.status(200).json({ skills: user.skills });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getAllEducation = async (req, res) => {
+  const userId = req.user.id; // Get user ID from token
+
+  try {
+    const user = await Skills.findOne({ userId });
+
+    if (!user) {
+      return res.status(404).json({ education: [] });
+    }
+
+    res.status(200).json({ education: user.education });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getSkillsAndEducation = async (req, res) => {
+  const userId = req.user.id; // Get user ID from token
+
+  try {
+    const user = await Skills.findOne({ userId });
+
+    if (!user) {
+      return res.status(404).json({ skills: [], education: [] });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+module.exports = { addSkills, addEducation, deleteSkill, deleteEducation, getAllSkills, getAllEducation, getSkillsAndEducation };

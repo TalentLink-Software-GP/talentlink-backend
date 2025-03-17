@@ -1,59 +1,44 @@
 const express = require("express");
-const SkillsController = require("../controllers/skillsController");
+const { 
+  addSkills, 
+  addEducation, 
+  deleteSkill, 
+  deleteEducation, 
+  getAllSkills, 
+  getAllEducation, 
+  getSkillsAndEducation 
+} = require("../controllers/skillsController");
+
 const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
 
 /**
  * @swagger
  * components:
- *   securitySchemes:
- *     bearerAuth:
- *       type: http
- *       scheme: bearer
- *       bearerFormat: JWT
  *   schemas:
  *     Skills:
  *       type: object
  *       required:
  *         - skills
+ *         - education
  *       properties:
  *         skills:
  *           type: array
  *           items:
  *             type: string
- *           maxItems: 100
- *           description: A list of up to 100 skills for the user.
+ *           description: List of skills
+ *         education:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: List of education qualifications
  */
 
 /**
  * @swagger
- * /api/skills:
- *   get:
- *     summary: Retrieve the authenticated user's skills
- *     tags: [Skills]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Successfully retrieved user's skills
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Skills'
- *       401:
- *         description: Unauthorized (invalid or missing token)
- *       404:
- *         description: No skills found for this user
- *       500:
- *         description: Server error
- */
-router.get("/", authMiddleware, SkillsController.getUserSkills);
-
-/**
- * @swagger
- * /api/skills:
+ * /api/skills/add-skills:
  *   post:
- *     summary: Add or update skills for the authenticated user
+ *     summary: Add one or more skills
  *     tags: [Skills]
  *     security:
  *       - bearerAuth: []
@@ -63,45 +48,24 @@ router.get("/", authMiddleware, SkillsController.getUserSkills);
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - skills
  *             properties:
  *               skills:
  *                 type: array
  *                 items:
  *                   type: string
- *                 maxItems: 100
- *                 description: List of skills to add or update
  *     responses:
- *       200:
- *         description: Skills updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 skills:
- *                   type: array
- *                   items:
- *                     type: string
  *       201:
- *         description: New skills list created
+ *         description: Skills added successfully
  *       400:
- *         description: Validation error or skills limit exceeded
- *       401:
- *         description: Unauthorized (invalid or missing token)
- *       500:
- *         description: Server error
+ *         description: Invalid input
  */
-router.post("/", authMiddleware, SkillsController.addUserSkills);
+router.post("/add-skills", authMiddleware, addSkills);
 
 /**
  * @swagger
- * /api/skills:
- *   delete:
- *     summary: Delete a specific skill from the authenticated user's list
+ * /api/skills/add-education:
+ *   post:
+ *     summary: Add one or more education qualifications
  *     tags: [Skills]
  *     security:
  *       - bearerAuth: []
@@ -111,33 +75,109 @@ router.post("/", authMiddleware, SkillsController.addUserSkills);
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - skill
+ *             properties:
+ *               education:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       201:
+ *         description: Education added successfully
+ *       400:
+ *         description: Invalid input
+ */
+router.post("/add-education", authMiddleware, addEducation);
+
+/**
+ * @swagger
+ * /api/skills/delete-skill:
+ *   delete:
+ *     summary: Delete a skill
+ *     tags: [Skills]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
  *             properties:
  *               skill:
  *                 type: string
- *                 description: The skill to be removed
  *     responses:
  *       200:
- *         description: Skill removed successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 skills:
- *                   type: array
- *                   items:
- *                     type: string
- *       401:
- *         description: Unauthorized (invalid or missing token)
- *       404:
- *         description: Skill not found in user's list or user has no skills
- *       500:
- *         description: Server error
+ *         description: Skill deleted successfully
+ *       400:
+ *         description: Invalid input
  */
-router.delete("/", authMiddleware, SkillsController.deleteSkill);
+router.delete("/delete-skill", authMiddleware, deleteSkill);
+
+/**
+ * @swagger
+ * /api/skills/delete-education:
+ *   delete:
+ *     summary: Delete an education qualification
+ *     tags: [Skills]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               education:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Education deleted successfully
+ *       400:
+ *         description: Invalid input
+ */
+router.delete("/delete-education", authMiddleware, deleteEducation);
+
+/**
+ * @swagger
+ * /api/skills/get-all-skills:
+ *   get:
+ *     summary: Get all skills for the authenticated user
+ *     tags: [Skills]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved all skills
+ */
+router.get("/get-all-skills", authMiddleware, getAllSkills);
+
+/**
+ * @swagger
+ * /api/skills/get-all-education:
+ *   get:
+ *     summary: Get all education qualifications for the authenticated user
+ *     tags: [Skills]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved all education qualifications
+ */
+router.get("/get-all-education", authMiddleware, getAllEducation);
+
+/**
+ * @swagger
+ * /api/skills/get-skills-education:
+ *   get:
+ *     summary: Get all skills and education for the authenticated user
+ *     tags: [Skills]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved all skills and education
+ */
+router.get("/get-skills-education", authMiddleware, getSkillsAndEducation);
 
 module.exports = router;
