@@ -1,32 +1,36 @@
 const swaggerJsDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 
-const options = {
-  definition: {
+const swaggerOptions = {
+  swaggerDefinition: {
     openapi: "3.0.0",
     info: {
       title: "TalentLink API",
       version: "1.0.0",
-      description: "API documentation for TalentLink Authentication System",
+      description: "API documentation for TalentLink",
     },
     servers: [
       {
         url: "http://localhost:5000",
+        description: "Local server",
       },
     ],
-    securitySchemes: {
-      bearerAuth: {
-        type: "http",
-        scheme: "bearer",
-        bearerFormat: "JWT",
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
       },
     },
+    security: [{ bearerAuth: [] }],
   },
   apis: ["./routes/*.js"],
 };
 
-const swaggerSpec = swaggerJsDoc(options);
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
 
 module.exports = (app) => {
-  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 };

@@ -6,12 +6,25 @@ const skillsSchema = new mongoose.Schema({
     required: true,
     ref: 'User'
   },
+  education: {
+    type: [String],
+    required: true,
+    validate: [arrayLimit, '{PATH} exceeds the limit of 3']
+  },
   skills: {
     type: [String],
     required: true,
-    maxItems: 100
+    validate: [arrayLimitSkills, '{PATH} exceeds the limit of 100']
   }
 });
+
+function arrayLimit(val) {
+  return val.length <= 3;
+}
+
+function arrayLimitSkills(val) {
+  return val.length <= 100;
+}
 
 const Skills = mongoose.model('Skills', skillsSchema);
 
