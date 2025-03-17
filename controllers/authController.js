@@ -5,14 +5,13 @@ require("dotenv").config();
 const sendEmail = require("../utils/sendEmail");
 const crypto = require("crypto");
 
-
 const PORT = process.env.PORT || 5000;
-
 const register = async (req, res) => {
   try {
-    const { name, username, email, phone, password, role } = req.body;
+    const { name, username, email, phone, password, role, date, country, city, gender } = req.body;
 
-    if (!name || !username || !email || !phone || !password || !role) {
+    if (!name || !username || !email || !phone || !password || !role|| !date || !country || !city || !gender
+    ) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
@@ -29,9 +28,15 @@ const register = async (req, res) => {
       email,
       phone,
       password: hashedPassword,
-      role: role || "user",
+      role: role || "Freelancer",
       isVerified: false,
+      date,
+      country,
+      city,
+      gender,
     });
+
+    await user.save(); 
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "35h",
@@ -40,13 +45,16 @@ const register = async (req, res) => {
     const verificationUrl = `http://localhost:${PORT}/api/auth/verify-email/${token}`;
     await sendEmail(user.email, "Verify Your Email", `Click this link to verify: ${verificationUrl}`);
 
-    await user.save();
-
-    res.status(201).json({ message: "User registered. Please verify your email." });
+    res.status(201).json({
+      message: "User registered. Please verify your email.",
+      token: token,  
+    });
+    
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 const verifyEmail = async (req, res) => {
   const { token } = req.params;
@@ -187,6 +195,28 @@ const setNewPassword = async (req, res) => {
   }
 };
 
+
+const isverifyd = async (req, res) => { 
+  try {
+    const { email } = req.params; 
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.status(200).json({ message: "Email is verified" });
+    }
+    
+    return res.status(400).json({ message: "Email is not verified" });
+
+  } catch (error) {
+    return res.status(500).json({ error: "Server error" });
+  }
+};
+
 module.exports = {
   register,
   verifyEmail,
@@ -194,4 +224,5 @@ module.exports = {
   emailFornewPassword,
   verifyResetCode,
   setNewPassword,
+  isverifyd,
 };
