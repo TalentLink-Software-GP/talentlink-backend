@@ -3,7 +3,7 @@ const Skills = require("../models/Skills");
 const addSkills = async (req, res) => {
   const { skills } = req.body;
   const userId = req.user.id; // Get user ID from token
-
+  console.log('Skills: ' + skills)
   try {
     let userSkills = await Skills.findOne({ userId });
 
@@ -22,8 +22,9 @@ const addSkills = async (req, res) => {
 
 const addEducation = async (req, res) => {
   const { education } = req.body;
+  console.log(req.body);
   const userId = req.user.id; // Get user ID from token
-
+  console.log('education: ' + education + "ID: " + userId)
   try {
     let userEducation = await Skills.findOne({ userId });
 
