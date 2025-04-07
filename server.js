@@ -2,8 +2,10 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const path = require("path"); // <-- Add this
 const authRoutes = require("./routes/authRoutes");
 const skillsRoutes = require("./routes/skillsRouts");
+const userDataRoutes = require("./routes/userDataRouts"); // <-- Add your user routes here
 const setupSwagger = require("./swagger");
 
 dotenv.config();
@@ -15,11 +17,17 @@ const MONGO_URI = process.env.MONGO_URI;
 app.use(cors());
 app.use(express.json());
 
+// 🔥 Serve uploaded images from the 'uploads' folder
+app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // <-- Add this line
+
+// Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/skills",skillsRoutes)
+app.use("/api/skills", skillsRoutes);
+app.use("/api/users", userDataRoutes); // <-- Add this line to activate avatar upload route
 
 setupSwagger(app);
 
+// DB
 mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("✅ MongoDB Connected"))
   .catch(err => console.error("❌ MongoDB Connection Error:", err));
