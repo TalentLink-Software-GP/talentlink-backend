@@ -1,7 +1,10 @@
 const express = require("express")
 const{
-    getUserName
+    getUserData,
+    updateAvatar,
+    deleteAvatar
 } = require("../controllers/userController")
+const upload = require("../middleware/multer");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
@@ -42,4 +45,10 @@ const router = express.Router();
  *         description: Internal server error.
  */
 
-router.get("/api/users/getUserName", getUserName)
+router.get("/getUserData", getUserData)
+
+router.post("/upload-avatar", authMiddleware, upload.single("avatar"), updateAvatar);
+
+router.delete('/remove-avatar', authMiddleware, deleteAvatar);
+
+module.exports = router;

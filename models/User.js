@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema({
     country:{type: String,required:false},
     city:{type: String,required:false},
     gender:{type: String,required:false},
+    avatarUrl: { type: String, required: false },
 
 
     createdAt: { type: Date, default: Date.now },
