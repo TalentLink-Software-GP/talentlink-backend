@@ -4,7 +4,7 @@ const{
     updateAvatar,
     deleteAvatar,
     uploadCV,
-    deleteCV
+    deleteCV,
 } = require("../controllers/userController")
 const upload = require("../middleware/multer");
 
@@ -166,6 +166,5 @@ router.post("/upload-cv", authMiddleware, upload.single("cv"), uploadCV);
  *         description: Internal server error
  */
 router.delete("/remove-cv", authMiddleware, deleteCV);
-
 
 module.exports = router;
