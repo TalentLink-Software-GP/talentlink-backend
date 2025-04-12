@@ -19,8 +19,7 @@ const userSchema = new mongoose.Schema({
     gender:{type: String,required:false},
     avatarUrl: { type: String, required: false },
     cvUrl: { type: String, required: false },
-
-
+    analyzedCV:{type: String, required: false},
     createdAt: { type: Date, default: Date.now },
   });
   
