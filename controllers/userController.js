@@ -69,4 +69,50 @@ const deleteAvatar = async (req, res) => {
   }
 };
 
-module.exports = {getUserData, updateAvatar, deleteAvatar}
+const uploadCV = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: "No CV file uploaded." });
+    }
+
+    const cv_Url = await uploadToGCS(file, "cvs"); // Specify folder "cvs"
+
+    const user = await Users.findByIdAndUpdate(
+      userId,
+      { cvUrl: cv_Url },  // Save CV URL in DB
+      { new: true }
+    );
+
+    res.status(200).json({ cv_Url, user });
+  } catch (err) {
+    console.error("CV upload error:", err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+const deleteCV = async (req, res) => {
+  try {
+    const user = await Users.findById(req.user.id);
+    if (!user || !user.cvUrl) {
+      return res.status(404).json({ message: 'CV not found' });
+    }
+
+    const fileName = `cvs/${decodeURIComponent(user.cvUrl.split('/').pop())}`;
+    const file = bucket.file(fileName);
+
+    await file.delete();
+    user.cvUrl = null;
+    await user.save();
+
+    return res.status(200).json({ message: 'CV removed' });
+  } catch (error) {
+    console.error('Error deleting CV:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+module.exports = {getUserData, updateAvatar, deleteAvatar, uploadCV, deleteCV}
