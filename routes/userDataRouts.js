@@ -2,7 +2,9 @@ const express = require("express")
 const{
     getUserData,
     updateAvatar,
-    deleteAvatar
+    deleteAvatar,
+    uploadCV,
+    deleteCV
 } = require("../controllers/userController")
 const upload = require("../middleware/multer");
 
@@ -50,5 +52,10 @@ router.get("/getUserData", getUserData)
 router.post("/upload-avatar", authMiddleware, upload.single("avatar"), updateAvatar);
 
 router.delete('/remove-avatar', authMiddleware, deleteAvatar);
+
+router.post("/upload-cv", authMiddleware, upload.single("cv"), uploadCV);
+
+router.delete("/remove-cv", authMiddleware, deleteCV);
+
 
 module.exports = router;
