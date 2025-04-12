@@ -49,12 +49,122 @@ const router = express.Router();
 
 router.get("/getUserData", getUserData)
 
+/**
+ * @swagger
+ * /api/users/upload-avatar:
+ *   post:
+ *     summary: Upload user avatar
+ *     description: Allows authenticated users to upload an avatar image.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               avatar:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Avatar uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 avatarUrl:
+ *                   type: string
+ *       400:
+ *         description: Bad request (e.g. file not provided)
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.post("/upload-avatar", authMiddleware, upload.single("avatar"), updateAvatar);
 
+/**
+ * @swagger
+ * /api/users/remove-avatar:
+ *   delete:
+ *     summary: Delete user avatar
+ *     description: Deletes the avatar of the authenticated user.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Avatar deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Avatar not found
+ *       500:
+ *         description: Internal server error
+ */
 router.delete('/remove-avatar', authMiddleware, deleteAvatar);
 
+/**
+ * @swagger
+ * /api/users/upload-cv:
+ *   post:
+ *     summary: Upload user CV
+ *     description: Allows authenticated users to upload a CV in PDF format.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               cv:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: CV uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 cvUrl:
+ *                   type: string
+ *       400:
+ *         description: Bad request (e.g. file not provided)
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.post("/upload-cv", authMiddleware, upload.single("cv"), uploadCV);
 
+/**
+ * @swagger
+ * /api/users/remove-cv:
+ *   delete:
+ *     summary: Delete user CV
+ *     description: Deletes the uploaded CV of the authenticated user.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: CV deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: CV not found
+ *       500:
+ *         description: Internal server error
+ */
 router.delete("/remove-cv", authMiddleware, deleteCV);
 
 
