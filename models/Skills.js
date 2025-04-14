@@ -8,14 +8,34 @@ const skillsSchema = new mongoose.Schema({
   },
   education: {
     type: [String],
-    required: true,
+    required: false,
     validate: [arrayLimit, '{PATH} exceeds the limit of 3']
   },
   skills: {
     type: [String],
-    required: true,
+    required: false,
     validate: [arrayLimitSkills, '{PATH} exceeds the limit of 100']
-  }
+  },
+  experience: {
+    type: [String],
+    required: false,
+    validate: [arrayLimitSkills, '{PATH} exceeds the limit of 100']
+  },
+  certifications : {
+    type: [String],
+    required: false,
+    validate: [arrayLimitSkills, '{PATH} exceeds the limit of 100']
+  },
+  languages : {
+    type: [String],
+    required: false,
+    validate: [arrayLimitSkills, '{PATH} exceeds the limit of 100']
+  },
+  summary: {
+    type: String,
+    required: false
+  },
+
 });
 
 function arrayLimit(val) {

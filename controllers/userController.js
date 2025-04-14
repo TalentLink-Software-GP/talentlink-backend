@@ -2,19 +2,8 @@ const Users = require("../models/User");
 const {uploadToGCS, bucket} = require("../utils/gcsUploader");
 const extractTextFromGCS = require("../utils/extractTextFromGCS");
 const { Readable } = require('stream');
-// const { VertexAI } = require('@google-cloud/vertexai');
-// const path = require('path');
-
-// process.env.GOOGLE_APPLICATION_CREDENTIALS = path.join(__dirname, 'talentlink-456012-085abb34dcc0.json');
-
-// const vertexAI = new VertexAI({
-//   project: 'talentlink-456012',
-//   location: 'us-central1', // same region where the model is hosted
-// });
-
-// const generativeModel = vertexAI.getGenerativeModel({
-//   model: 'text-bison', // publisher model
-// });
+const openai = require("../utils/openaiClient");
+const Skills = require('../models/Skills');
 
 const getUserData = async (req,res) => {
     try{
@@ -84,6 +73,13 @@ const deleteAvatar = async (req, res) => {
   }
 };
 
+const normalizeToNested = (data) => {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (typeof data === 'object') return [data];
+  return [];
+};
+
 const uploadCV = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -100,69 +96,109 @@ const uploadCV = async (req, res) => {
       try {
         const oldFileName = `cvs/${decodeURIComponent(user.cvUrl.split('/').pop())}`;
         await bucket.file(oldFileName).delete();
-        console.log("Previous CV deleted:", oldFileName);
       } catch (err) {
-        console.warn("No previous CV found or error deleting it:", err.message);
+        console.warn("Previous CV not found or error deleting:", err.message);
       }
     }
 
     const cv_Url = await uploadToGCS(file, "cvs");
     const filePath = cv_Url.split(`https://storage.googleapis.com/${bucket.name}/`)[1];
     const gcsUri = `gs://${bucket.name}/${filePath}`;
-    console.log("GCS URI:", gcsUri);
+
+    console.log("Starting OCR for URI:", gcsUri);
 
     const extractedText = await extractTextFromGCS(gcsUri);
-    console.log("Extracted Text:", extractedText);
-    
-    // const prompt = `
-    // Extract the following structured data from this CV:
-    
-    // - Name
-    // - Email
-    // - Phone number
-    // - Skills
-    // - Education
-    // - Work Experience
-    
-    // Text:
-    // """${extractedText}"""
-    // `;
-    
-    // // Run Vertex AI
-    // const result = await generativeModel.generateContent({
-    //   contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    // });
-    
-    // const aiOutput = result.response.candidates?.[0]?.content?.parts?.[0]?.text || "No AI response";
-    // console.log("AI Structured Data:\n", aiOutput);
 
+    const chatResponse = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You're an assistant that extracts structured JSON from CV/resume text."
+        },
+        {
+          role: "user",
+          content: `You are an AI that extracts structured information from resumes. 
+        
+        Given the following resume text:
+        
+        ${extractedText}
+        
+        Extract the following fields as a clean JSON object:
+        - fullName (string)
+        - email (string)
+        - phone (string)
+        - skills (array of strings)
+        - education (array of strings; each string should include degree, institution, and years, e.g. "B.Sc in Computer Science, XYZ University (2010–2014)")
+        - experience (array of strings; each string should summarize company, role, and dates, e.g. "Software Engineer at ABC Corp (2016–2020)")
+        - certifications (array of strings)
+        - languages (array of strings)
+        - summary (string; if not clearly present, generate a concise professional summary based on the candidate’s experience and skills)
+        
+        Return only a clean JSON object with no extra explanation or formatting.`
+        },
+      ],
+      temperature: 0.2,
+    });
 
-    const analyzedFileName = `analyzed-cvs/${userId}_${Date.now()}.txt`;
-    const analyzedFile = bucket.file(analyzedFileName);
+    let structuredJsonString = chatResponse.choices[0].message.content;
+    structuredJsonString = structuredJsonString.replace(/```json|```/g, '').trim();
+    const parsedData = JSON.parse(structuredJsonString);
 
-    const stream = analyzedFile.createWriteStream({
-      metadata: {
-        contentType: 'text/plain',
-      },
+    const educationArray = normalizeToNested(parsedData.education || []).slice(0, 3);
+    const skillsArray = normalizeToNested(parsedData.skills || []).flat().slice(0, 100);
+    const experienceArray = normalizeToNested(parsedData.experience || parsedData.workExperience || []).slice(0, 100);
+    const certificationsArray = normalizeToNested(parsedData.certifications || []).flat().slice(0, 100);
+    const languagesArray = normalizeToNested(parsedData.languages || []).flat().slice(0, 100);
+    const summary = parsedData.summary || '';
+
+    console.log("Education:", JSON.stringify(educationArray, null, 2));
+    console.log("Experience:", JSON.stringify(experienceArray, null, 2));
+    console.log("Skills:", JSON.stringify(skillsArray, null, 2));
+    console.log("Certifications:", JSON.stringify(certificationsArray, null, 2));
+    console.log("Languages:", JSON.stringify(languagesArray, null, 2));
+    console.log("Summary:", summary);
+
+    const jsonFileName = `analyzed-cvs/${userId}_${Date.now()}.json`;
+    const jsonFile = bucket.file(jsonFileName);
+
+    const jsonStream = jsonFile.createWriteStream({
+      metadata: { contentType: 'application/json' },
     });
 
     await new Promise((resolve, reject) => {
-      Readable.from([extractedText])
-        .pipe(stream)
+      Readable.from([JSON.stringify(parsedData, null, 2)])
+        .pipe(jsonStream)
         .on('error', reject)
         .on('finish', resolve);
     });
 
-    const analyzedCVUrl = `https://storage.googleapis.com/${bucket.name}/${analyzedFileName}`;
+    const analyzedJsonUrl = `https://storage.googleapis.com/${bucket.name}/${jsonFileName}`;
+
+    await Skills.findOneAndUpdate(
+      { userId: user._id },
+      {
+        $addToSet: {
+          education: { $each: educationArray },
+          experience: { $each: experienceArray },
+          skills: { $each: skillsArray },
+          certifications: { $each: certificationsArray },
+          languages: { $each: languagesArray },
+        },
+        summary,
+      },
+      { upsert: true, new: true }
+    );
 
     user.cvUrl = cv_Url;
-    user.analyzedCV = analyzedCVUrl;
+    user.analyzedCV = analyzedJsonUrl;
     await user.save();
 
     res.status(200).json({
       message: 'CV uploaded and analyzed successfully.',
       cv_Url,
-      analyzedCV: analyzedCVUrl,
+      analyzedJson: analyzedJsonUrl,
+      parsedData,
       user,
     });
   } catch (err) {
@@ -170,6 +206,7 @@ const uploadCV = async (req, res) => {
     res.status(500).json({ message: "Internal server error." });
   }
 };
+
 
 const deleteCV = async (req, res) => {
   try {
