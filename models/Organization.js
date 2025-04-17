@@ -16,7 +16,8 @@ const organizationSchema = new mongoose.Schema({
       enum: ["Organization"], 
       default: "Organization" 
     },
-    avatarUrl: { type: String, required: false },
+    avatarUrl: { type: String, required: false},
+
     createdAt: { type: Date, default: Date.now },
   });
   
