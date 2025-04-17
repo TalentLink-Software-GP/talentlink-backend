@@ -64,8 +64,7 @@ const deleteSkill = async (req, res) => {
 
 const deleteEducation = async (req, res) => {
   const { education } = req.body;
-  const userId = req.user.id; // Get user ID from token
-
+  const userId = req.user.id;
   try {
     const userEducation = await Skills.findOneAndUpdate(
       { userId },

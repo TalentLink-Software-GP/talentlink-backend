@@ -163,7 +163,7 @@ const login = async (req, res) => {
     }
     else if(organaization){
       isMatch = await bcrypt.compare(password, organaization.password);
-      token = jwt.sign({ id: organaization._id, role: "Organization" , industry: organaization.industry, email: organaization.email}, process.env.JWT_SECRET, { expiresIn: "1d" });
+      token = jwt.sign({ id: organaization._id, role: "Organization" , industry: organaization.industry, email: organaization.email, name: organaization.name}, process.env.JWT_SECRET, { expiresIn: "1d" });
       console.log(organaization.email);
     }
 
@@ -209,8 +209,6 @@ const emailFornewPassword= async(req,res)=>{
     res.status(500).json({ error: error.message });
 
   }
-
-
 };
 const verifyResetCode =async(req,res)=>{
 

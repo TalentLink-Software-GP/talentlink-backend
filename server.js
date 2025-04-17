@@ -5,7 +5,8 @@ const dotenv = require("dotenv");
 const path = require("path"); // <-- Add this
 const authRoutes = require("./routes/authRoutes");
 const skillsRoutes = require("./routes/skillsRouts");
-const userDataRoutes = require("./routes/userDataRouts"); // <-- Add your user routes here
+const userDataRoutes = require("./routes/userDataRouts");
+const organaizationRouts = require('./routes/orgnizationRoutes')
 const setupSwagger = require("./swagger");
 
 dotenv.config();
@@ -23,7 +24,8 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // <-- Add
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/skills", skillsRoutes);
-app.use("/api/users", userDataRoutes); // <-- Add this line to activate avatar upload route
+app.use("/api/users", userDataRoutes); 
+app.use("/api/organization", organaizationRouts)
 
 setupSwagger(app);
 
