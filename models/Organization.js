@@ -17,6 +17,7 @@ const organizationSchema = new mongoose.Schema({
       default: "Organization" 
     },
     avatarUrl: { type: String, required: false},
+
     createdAt: { type: Date, default: Date.now },
   });
   
