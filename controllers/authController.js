@@ -183,24 +183,27 @@ const emailFornewPassword= async(req,res)=>{
 
     console.log("The",email);
     const user = await User.findOne({ email });
-
+    const organaization = await Organaization.findOne({ email });
     
 
-    if(!user){
+    if(!user && !organaization){
       return res.status(404).json({ message: "no email found, try again" });
     }
 
     const resetCode = crypto.randomInt(100000, 999999).toString();
-
-    user.resetCode = resetCode;  
-
-    user.resetCodeExpires = Date.now() + 10 * 60 * 1000;
-    await user.save();
-
-
-    await sendEmail(user.email, " Password Reset Code", `Your password reset code is: ${resetCode}. It expires in 10 minutes.`);
+    if(user){
+      user.resetCode = resetCode;  
+      user.resetCodeExpires = Date.now() + 10 * 60 * 1000;
+      await user.save();
+      await sendEmail(user.email, " Password Reset Code", `Your password reset code is: ${resetCode}. It expires in 10 minutes.`);
+    }
+    else if(organaization){
+      organaization.resetCode = resetCode;
+      organaization.resetCodeExpires = Date.now() + 10 * 60 * 1000;
+      await organaization.save();
+      await sendEmail(organaization.email, " Password Reset Code", `Your password reset code is: ${resetCode}. It expires in 10 minutes.`);
+    }
     res.status(200).json({ message: "sent succes" });
-
   }
   catch(error){
     res.status(500).json({ error: error.message });
@@ -214,18 +217,17 @@ const verifyResetCode =async(req,res)=>{
   const { email, resetCode } = req.body;
 
   const user = await User.findOne({ email: email });
+  const organaization = await Organaization.findOne({ email })
 
-  if (!user) {
+  if (!user && !organaization) {
     return res.status(404).json({ message: "User not found" });
   }
 
-  if (user.resetCode === resetCode) {
+  if ((user && user.resetCode === resetCode) || (organaization && organaization.resetCode === resetCode) ) {
     return res.status(200).json({ message: "Reset code is correct. You can now reset your password." });
   } else {
     return res.status(400).json({ message: "Invalid reset code" });
   }
-
-
 }
 const setNewPassword = async (req, res) => {
   try {
@@ -233,26 +235,31 @@ const setNewPassword = async (req, res) => {
     console.log(email);
 
     const user = await User.findOne({ email });
+    const organaization = await Organaization.findOne({ email })
 
-    if (!user) {
+    if (!user && !organaization) {
       return res.status(404).json({ error: "User not found" });
     }
 
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
+      if(user){
       user.password = hashedPassword;
+      user.resetCode = undefined;
+      user.resetCodeExpires = undefined;
+      await user.save();
+      }
+      if(organaization){
+      organaization.password =hashedPassword;
+      organaization.resetCode = undefined;
+      organaization.resetCodeExpires = undefined;
+      await organaization.save();
+      }
+      res.status(200).json({ message: "Password updated successfully" });
     } catch (hashError) {
       console.error("Error hashing password:", hashError);
       return res.status(500).json({ error: "Error hashing password" });
     }
-
-    user.resetCode = undefined;
-
-    user.resetCodeExpires = undefined;
-
-    await user.save();
-
-    res.status(200).json({ message: "Password updated successfully" });
   } catch (error) {
     console.error("Error in setNewPassword:", error);
     res.status(500).json({ error: error.message });
