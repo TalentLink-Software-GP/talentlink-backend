@@ -7,6 +7,7 @@ const authRoutes = require("./routes/authRoutes");
 const skillsRoutes = require("./routes/skillsRouts");
 const userDataRoutes = require("./routes/userDataRouts");
 const organaizationRouts = require('./routes/orgnizationRoutes')
+const jobRoutes = require('./routes/jobsRoutes')
 const setupSwagger = require("./swagger");
 const post=require("./routes/postsRoutes");
 
@@ -28,6 +29,7 @@ app.use("/api/skills", skillsRoutes);
 app.use("/api/posts", post);
 app.use("/api/users", userDataRoutes); 
 app.use("/api/organization", organaizationRouts)
+app.use("/api/job",jobRoutes)
 
 setupSwagger(app);
 
