@@ -8,6 +8,7 @@ const skillsRoutes = require("./routes/skillsRouts");
 const userDataRoutes = require("./routes/userDataRouts");
 const organaizationRouts = require('./routes/orgnizationRoutes')
 const setupSwagger = require("./swagger");
+const post=require("./routes/postsRoutes");
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // <-- Add
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/skills", skillsRoutes);
+app.use("/api/posts", post);
 app.use("/api/users", userDataRoutes); 
 app.use("/api/organization", organaizationRouts)
 
