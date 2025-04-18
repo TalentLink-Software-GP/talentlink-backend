@@ -14,6 +14,7 @@ const router = express.Router();
  *         - email
  *         - phone
  *         - password
+ *         - isVerified
  *       properties:
  *         name:
  *           type: string
@@ -23,18 +24,44 @@ const router = express.Router();
  *           description: Unique username
  *         email:
  *           type: string
- *           description: User's email
+ *           description: User's email address
  *         phone:
  *           type: string
- *           description: Phone number
+ *           description: User's phone number
  *         password:
  *           type: string
- *           description: User's password (hashed)
+ *           description: User's hashed password
+ *         isVerified:
+ *           type: boolean
+ *           description: Indicates if the user has verified their email
+ *         resetCode:
+ *           type: string
+ *           description: Code used for password reset
  *         role:
  *           type: string
- *           enum: [admin, organization, freelancer, user]
- *           default: user
- * 
+ *           enum: [admin, Organization, Freelancer, Job Seeker]
+ *           description: Role of the user
+ *         date:
+ *           type: string
+ *           format: date
+ *           description: Optional birth date or registration date
+ *         country:
+ *           type: string
+ *         city:
+ *           type: string
+ *         gender:
+ *           type: string
+ *         avatarUrl:
+ *           type: string
+ *           format: uri
+ *         cvUrl:
+ *           type: string
+ *           format: uri
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Account creation timestamp
+ *
  * /api/auth/register:
  *   post:
  *     summary: Register a new user
@@ -50,9 +77,7 @@ const router = express.Router();
  *         description: User registered successfully, email verification required
  *       400:
  *         description: User already exists or invalid input
- * 
- * 
- * */
+ */
 router.post("/register", register);
 
 /**
