@@ -1,10 +1,9 @@
 const Job = require('../models/Job');
 const Organaization = require('../models/Organization');
-const extractTextFromGCS = require('../utils/extractTextFromGCS'); // your OCR function
-const { uploadToGCS } = require('../utils/gcsUploader');
+const extractTextFromGCS = require('../utils/extractTextFromGCS');
+const { uploadToGCS, bucket } = require('../utils/gcsUploader');
 const openai = require('../utils/openaiClient');
-
-
+const path = require('path');
 
 const getOrgJobs = async (req, res) => {  
     try {
@@ -145,16 +144,21 @@ const smartAddJob = async (req, res) => {
     } else if (file) {
       const ext = path.extname(file.originalname).toLowerCase();
 
-      // Upload to GCS
+      // Upload file to GCS first
       const gcsUrl = await uploadToGCS(file, "job-files");
-      const gcsUri = gcsUrl.replace('https://storage.googleapis.com/', 'gs://');
+      const gcsUri = `gs://${bucket.name}/${gcsUrl.split(`https://storage.googleapis.com/${bucket.name}/`)[1]}`;
 
+      console.log("Uploaded to GCS:", gcsUri);
+
+      // Use OCR for all non-txt files
       if (ext === '.txt') {
         const contents = fs.readFileSync(file.path, 'utf-8');
         extractedText = contents;
-        fs.unlinkSync(file.path); // Clean up local file
+        fs.unlinkSync(file.path);
       } else {
+        console.log("Extracting text using OCR from:", gcsUri);
         extractedText = await extractTextFromGCS(gcsUri);
+        if (!extractedText) throw new Error("OCR failed to extract any text.");
       }
     } else {
       return res.status(400).json({ message: "No text or file provided" });
