@@ -4,6 +4,8 @@ const extractTextFromGCS = require('../utils/extractTextFromGCS');
 const { uploadToGCS, bucket } = require('../utils/gcsUploader');
 const openai = require('../utils/openaiClient');
 const path = require('path');
+const fs = require("fs");
+
 
 const getOrgJobs = async (req, res) => {  
     try {
@@ -144,27 +146,32 @@ const smartAddJob = async (req, res) => {
     } else if (file) {
       const ext = path.extname(file.originalname).toLowerCase();
 
-      // Upload file to GCS first
-      const gcsUrl = await uploadToGCS(file, "job-files");
-      const gcsUri = `gs://${bucket.name}/${gcsUrl.split(`https://storage.googleapis.com/${bucket.name}/`)[1]}`;
-
-      console.log("Uploaded to GCS:", gcsUri);
-
-      // Use OCR for all non-txt files
       if (ext === '.txt') {
+        // Read plain text from file
         const contents = fs.readFileSync(file.path, 'utf-8');
         extractedText = contents;
-        fs.unlinkSync(file.path);
-      } else {
-        console.log("Extracting text using OCR from:", gcsUri);
+        fs.unlinkSync(file.path); // Cleanup
+      } else if (ext === '.pdf') {
+        // Upload PDF to GCS
+        const gcsUrl = await uploadToGCS(file, "job-files");
+        const gcsUri = `gs://${bucket.name}/${gcsUrl.split(`https://storage.googleapis.com/${bucket.name}/`)[1]}`;
+        console.log("Uploaded to GCS:", gcsUri);
+
+        // Extract text using OCR
         extractedText = await extractTextFromGCS(gcsUri);
         if (!extractedText) throw new Error("OCR failed to extract any text.");
+
+        // Cleanup
+        fs.unlinkSync(file.path);
+      } else {
+        fs.unlinkSync(file.path); // Cleanup
+        return res.status(400).json({ message: "Unsupported file format. Only .txt or .pdf allowed." });
       }
     } else {
       return res.status(400).json({ message: "No text or file provided" });
     }
 
-    // Prompt OpenAI
+    // Create prompt for AI
     const prompt = `
 Given the following job description text, extract a complete JSON object that fits this job model:
 {
