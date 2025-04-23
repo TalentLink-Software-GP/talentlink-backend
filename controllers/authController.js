@@ -84,10 +84,16 @@ const register = async (req, res) => {
     });
 
     await user.save();
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "35h",
-    });
+    const token = jwt.sign(
+      { 
+        id: user._id, 
+        email: user.email, 
+        role: user.role,
+        username: user.username,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "35h" }
+    );
 
     const verificationUrl = `http://localhost:${PORT}/api/auth/verify-email/${token}`;
     await sendEmail(user.email, "Verify Your Email", `Click this link to verify: ${verificationUrl}`);

@@ -10,6 +10,8 @@ const upload = require("../middleware/multer");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
+const User = require("../models/User");  
+
 
 /**
  * @swagger
@@ -166,5 +168,28 @@ router.post("/upload-cv", authMiddleware, upload.single("cv"), uploadCV);
  *         description: Internal server error
  */
 router.delete("/remove-cv", authMiddleware, deleteCV);
+
+
+
+router.get("/get-user-id", authMiddleware, async (req, res) => {
+  try {
+    console.log("AWWADX");
+
+    // Check if req.user.email is available and use it to find the user by email
+    const user = await User.findById(req.user.id);
+    console.log("Decoded token email:", req.user.email);
+
+    
+    console.log("Fetched user:", user); // Add this line
+
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    res.json({ userId: user._id, username: user.username });
+  } catch (err) {
+    console.error("Error in /get-user-id route:", err); // Add this
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
 
 module.exports = router;
