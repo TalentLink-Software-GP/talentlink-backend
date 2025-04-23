@@ -10,6 +10,8 @@ const organaizationRouts = require('./routes/orgnizationRoutes')
 const jobRoutes = require('./routes/jobsRoutes')
 const setupSwagger = require("./swagger");
 const post=require("./routes/postsRoutes");
+const messageRoutes=require("./routes/messageRoutes");
+
 
 dotenv.config();
 
@@ -30,6 +32,8 @@ app.use("/api/posts", post);
 app.use("/api/users", userDataRoutes); 
 app.use("/api/organization", organaizationRouts)
 app.use("/api/job",jobRoutes)
+app.use('/api', messageRoutes);
+
 
 setupSwagger(app);
 
