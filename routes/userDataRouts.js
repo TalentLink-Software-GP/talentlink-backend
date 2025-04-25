@@ -190,6 +190,20 @@ router.get("/get-user-id", authMiddleware, async (req, res) => {
     res.status(500).json({ msg: "Server error" });
   }
 });
+router.get('/get-current-user', authMiddleware, async (req, res) => {
+  try {
+    console.log('Current User:', req.user);  // Debug log to see the user data
+
+    res.status(200).json({
+      name: req.user.username,
+      avatarUrl: req.user.avatarUrl || '',  // Ensure avatarUrl exists
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch current user' });
+  }
+});
+
 
 
 module.exports = router;
