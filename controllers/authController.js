@@ -164,7 +164,7 @@ const login = async (req, res) => {
     var token
     if(user){
       isMatch = await bcrypt.compare(password, user.password);
-      token = jwt.sign({ id: user._id, role: user.role , username: user.username}, process.env.JWT_SECRET, { expiresIn: "1d" });
+      token = jwt.sign({ id: user._id, role: user.role , username: user.username,name:user.name ,avatarUrl:user.avatarUrl}, process.env.JWT_SECRET, { expiresIn: "1d" });// updated here 
       console.log(user.username)
     }
     else if(organaization){

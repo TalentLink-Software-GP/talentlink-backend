@@ -10,8 +10,11 @@ const authenticateToken = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token.replace("Bearer ", ""), process.env.JWT_SECRET);
+         
+        
+        
         req.user = decoded;
-        console.log("✅ Token decoded:", decoded); // <-- See what's in the token
+        console.log("✅ Token decoded:", decoded); 
         next();
     } catch (error) {
         console.error("❌ Token verification failed:", error.message);
