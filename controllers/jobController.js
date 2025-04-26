@@ -150,7 +150,9 @@ const smartAddJob = async (req, res) => {
         // Read plain text from file
         const contents = fs.readFileSync(file.path, 'utf-8');
         extractedText = contents;
-        fs.unlinkSync(file.path); // Cleanup
+        if (fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        } // Cleanup
       } else if (ext === '.pdf') {
         // Upload PDF to GCS
         const gcsUrl = await uploadToGCS(file, "job-files");
@@ -162,9 +164,13 @@ const smartAddJob = async (req, res) => {
         if (!extractedText) throw new Error("OCR failed to extract any text.");
 
         // Cleanup
-        fs.unlinkSync(file.path);
+        if (fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
       } else {
-        fs.unlinkSync(file.path); // Cleanup
+        if (fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        } // Cleanup
         return res.status(400).json({ message: "Unsupported file format. Only .txt or .pdf allowed." });
       }
     } else {
