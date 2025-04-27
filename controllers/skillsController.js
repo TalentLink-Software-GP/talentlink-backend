@@ -115,7 +115,7 @@ const getAllEducation = async (req, res) => {
 };
 
 const getSkillsAndEducation = async (req, res) => {
-  const userId = req.user.id; // Get user ID from token
+  const userId = req.user.id;
 
   try {
     const user = await Skills.findOne({ userId });

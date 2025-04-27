@@ -1,5 +1,8 @@
 const Job = require('../models/Job');
 const Organaization = require('../models/Organization');
+const User = require('../models/User');
+const Skills = require('../models/Skills');
+const JobMatch = require('../models/jobMatch');
 const extractTextFromGCS = require('../utils/extractTextFromGCS');
 const { uploadToGCS, bucket } = require('../utils/gcsUploader');
 const openai = require('../utils/openaiClient');
@@ -44,6 +47,117 @@ const getAllJobs = async (req,res) => {
         return res.status(500).json({ message: 'Error fetching jobs' });
     }
 }
+
+const getAllJobsUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const userSkills = await Skills.findOne({ userId });
+    const jobs = await Job.find().sort({ createdAt: -1 });
+
+    if (!jobs.length) {
+      return res.status(204).json({ message: "No Available Jobs right Now" });
+    }
+
+    if (!userSkills || !userSkills.skills.length) {
+      return res.status(200).json(jobs);
+    }
+
+    const userProfileText = `
+      Skills: ${userSkills.skills.join(", ")}
+      Experience: ${userSkills.experience?.join(", ")}
+      Education: ${userSkills.education?.join(", ")}
+      Certifications: ${userSkills.certifications?.join(", ")}
+      Languages: ${userSkills.languages?.join(", ")}
+      Summary: ${userSkills.summary || ""}
+    `;
+
+    const scoredJobs = [];
+
+    for (const job of jobs) {
+      // 👉 First check if a match score already exists
+      let existingMatch = await JobMatch.findOne({ userId, jobId: job._id });
+
+      let matchScorePercentage = existingMatch ? existingMatch.matchScore : 0;
+
+      if (!existingMatch) {
+        const jobText = `
+          Title: ${job.title}
+          Description: ${job.description}
+          Requirements: ${job.requirements?.join(", ")}
+          Responsibilities: ${job.responsibilities?.join(", ")}
+          Category: ${job.category}
+          Location: ${job.location}
+          Salary: ${job.salary}
+          Type: ${job.jobType}
+        `;
+
+        const prompt = `
+You are an AI that matches job seekers with jobs.
+Given the following candidate profile and job posting, score the match from 0 to 100, where:
+- 100 means perfect fit
+- 0 means no fit
+Only respond with the number.
+
+Candidate Profile:
+${userProfileText}
+
+Job Posting:
+${jobText}
+
+Match Score:
+        `;
+
+        try {
+          const response = await openai.chat.completions.create({
+            model: "gpt-4",
+            messages: [
+              { role: "system", content: "You are a helpful assistant that scores job fit based on provided information." },
+              { role: "user", content: prompt }
+            ],
+            temperature: 0.2,
+            max_tokens: 10,
+          });
+
+          const completionText = response.choices[0].message.content.trim();
+          matchScorePercentage = parseFloat(completionText);
+
+          if (isNaN(matchScorePercentage)) {
+            matchScorePercentage = 0;
+          }
+
+          // 👉 Save the new match score
+          await JobMatch.findOneAndUpdate(
+            { userId, jobId: job._id },
+            { matchScore: matchScorePercentage, createdAt: new Date() },
+            { upsert: true, new: true }
+          );
+
+        } catch (apiError) {
+          console.error("OpenAI API error:", apiError);
+          matchScorePercentage = 0;
+        }
+      }
+
+      scoredJobs.push({
+        ...job.toObject(),
+        matchScore: matchScorePercentage,
+      });
+    }
+
+    scoredJobs.sort((a, b) => b.matchScore - a.matchScore);
+
+    return res.status(200).json(scoredJobs);
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Error fetching jobs' });
+  }
+};
 
 const addJob = async (req,res) => {
     console.log("Reach Add Job");
@@ -214,4 +328,4 @@ ${extractedText}
   }
 };
 
-module.exports = {getOrgJobs,getAllJobs,addJob,deleteJob,updateJob,smartAddJob}
+module.exports = {getOrgJobs,getAllJobs,addJob,deleteJob,updateJob,smartAddJob, getAllJobsUser}
