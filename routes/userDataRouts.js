@@ -5,6 +5,7 @@ const{
     deleteAvatar,
     uploadCV,
     deleteCV,
+    userByUsername,
 } = require("../controllers/userController")
 const upload = require("../middleware/multer");
 
@@ -169,14 +170,19 @@ router.post("/upload-cv", authMiddleware, upload.single("cv"), uploadCV);
  */
 router.delete("/remove-cv", authMiddleware, deleteCV);
 
+router.get("/byusername/:username", userByUsername);
+
 
 
 router.get("/get-user-id", authMiddleware, async (req, res) => {
+  console.log("AWWADX");
+
   try {
-    console.log("AWWADX");
 
     // Check if req.user.email is available and use it to find the user by email
     const user = await User.findById(req.user.id);
+    console.log(user);
+
     console.log("Decoded token email:", req.user.email);
 
     
