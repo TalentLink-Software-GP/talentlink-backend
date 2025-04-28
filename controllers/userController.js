@@ -230,4 +230,32 @@ const deleteCV = async (req, res) => {
 };
 
 
-module.exports = {getUserData, updateAvatar, deleteAvatar, uploadCV, deleteCV}
+
+
+
+
+const userByUsername = async (req, res) => {
+console.log("User by username route hit");
+  try {
+    
+    const { username } = req.params;
+    const user = await Users.findOne({ username: username })
+    // .populate('skills')
+      // .populate('posts')
+      // .populate('followers')
+      // .populate('following')
+      // .populate('savedPosts')
+      // .populate('bookmarks');
+  
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+  
+  return res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching user by username:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+module.exports = {getUserData, updateAvatar, deleteAvatar, uploadCV, deleteCV,userByUsername}

@@ -6,7 +6,8 @@ const {
   getposts,
   likePost,
   addComment,
-  addReply
+  addReply,getpostsbyusername
+
 }=require("../controllers/postsController");
 const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
@@ -81,6 +82,9 @@ router.delete('/deletePost/:id', authMiddleware,deletePost );
 
 // get post by id for feed 
   router.get('/get-posts', authMiddleware, getposts);
+
+  router.get('/getuser-posts-byusername/:username',authMiddleware, getpostsbyusername);
+
 
 
   router.patch('/:id/like-post', authMiddleware, likePost);

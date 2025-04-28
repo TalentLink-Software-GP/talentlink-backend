@@ -96,9 +96,9 @@ const getposts= async(req, res) =>{
     
         const formattedPosts = posts.map(post => ({
           _id: post._id,
-          // username:req.post.username,//////////////////////
+          //  authorUsername:req.post.username,//////////////////////
           content: post.content,
-          author: post.author, 
+          author: post.username, 
           username: req.user.username, 
           createdAt: post.createdAt,
           avatarUrl: post.avatarUrl || '',
@@ -221,6 +221,43 @@ const addReply = async (req, res) => {
   }
 };
 
+const getpostsbyusername = async (req, res) => {
+  try {
+    const { username } = req.params; // Get username from URL parameter
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Fetch posts for that username
+    const posts = await Post.find({ username })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalPosts = await Post.countDocuments({ username });
+    const hasMore = skip + limit < totalPosts;
+
+    const formattedPosts = posts.map(post => ({
+      _id: post._id,
+      content: post.content,
+      authorUsername: post.username, // IMPORTANT: use authorUsername directly
+      createdAt: post.createdAt,
+      avatarUrl: post.avatarUrl || '',
+      isLiked: post.likes.includes(req.user.username), // If user liked the post
+      likeCount: post.likes.length,
+      comments: post.comments || [],
+      isOwner: post.username === req.user.username, // If current user owns the post
+    }));
+
+    res.status(200).json({ posts: formattedPosts, hasMore });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error while fetching posts by username' });
+  }
+};
+
+
+
 module.exports = {
     postsCreate,
     updatePost,
@@ -228,7 +265,7 @@ module.exports = {
     getposts,
     likePost,
     addReply,
-    addComment  
+    addComment,getpostsbyusername 
    
   };
   
