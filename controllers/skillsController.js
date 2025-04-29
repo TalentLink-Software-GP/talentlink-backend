@@ -9,16 +9,25 @@ const getOrCreateSkillsDoc = async (userId) => {
 };
 
 const addItems = (field) => async (req, res) => {
-  const items = req.body[field];
+  console.log("Add Item");
+  const items = req.body[field] || (req.body.item ? [req.body.item] : []);
   const userId = req.user.id;
+
+  if (!Array.isArray(items)) {
+    return res.status(400).json({ error: `${field} must be an array` });
+  }
 
   try {
     const userDoc = await getOrCreateSkillsDoc(userId);
     userDoc[field].push(...items);
     await userDoc.save();
 
-    res.status(201).json({ message: `${field} added successfully`, [field]: userDoc[field] });
+    res.status(201).json({
+      message: `${field} added successfully`,
+      [field]: userDoc[field],
+    });
   } catch (error) {
+    console.log(error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -90,27 +99,60 @@ const getAll = async (req, res) => {
   }
 };
 
+const updateItem = (field) => async (req, res) => {
+  const { oldItem, newItem } = req.body;
+  const userId = req.user.id;
+
+  try {
+    const userDoc = await getOrCreateSkillsDoc(userId);
+    const index = userDoc[field].indexOf(oldItem);
+
+    if (index === -1) {
+      return res.status(404).json({ error: `${field} not found` });
+    }
+
+    userDoc[field][index] = newItem;
+    await userDoc.save();
+
+    res.status(200).json({ message: `${field} updated successfully`, [field]: userDoc[field] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
+  // Skills
   addSkills: addItems("skills"),
   deleteSkill: deleteItem("skills"),
+  updateSkill: updateItem("skills"),
   getSkills: getField("skills"),
 
+  // Education
   addEducation: addItems("education"),
   deleteEducation: deleteItem("education"),
+  updateEducation: updateItem("education"),
   getEducation: getField("education"),
 
+  // Experience
   addExperience: addItems("experience"),
   deleteExperience: deleteItem("experience"),
+  updateExperience: updateItem("experience"),
   getExperience: getField("experience"),
 
+  // Certifications
   addCertifications: addItems("certifications"),
   deleteCertifications: deleteItem("certifications"),
+  updateCertifications: updateItem("certifications"),
   getCertifications: getField("certifications"),
 
+  // Languages
   addLanguages: addItems("languages"),
   deleteLanguages: deleteItem("languages"),
+  updateLanguages: updateItem("languages"),
   getLanguages: getField("languages"),
 
+  // Summary & Full Data
   updateSummary,
-  getAll
+  getAll,
 };
+
