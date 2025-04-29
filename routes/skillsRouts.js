@@ -1,10 +1,21 @@
 const express = require("express");
 const {
-  addSkills, deleteSkill, getSkills,
-  addEducation, deleteEducation, getEducation,
-  addExperience, deleteExperience, getExperience,
-  addCertifications, deleteCertifications, getCertifications,
-  addLanguages, deleteLanguages, getLanguages,
+  // Skills
+  addSkills, updateSkill, deleteSkill, getSkills,
+
+  // Education
+  addEducation, updateEducation, deleteEducation, getEducation,
+
+  // Experience
+  addExperience, updateExperience, deleteExperience, getExperience,
+
+  // Certifications
+  addCertifications, updateCertifications, deleteCertifications, getCertifications,
+
+  // Languages
+  addLanguages, updateLanguages, deleteLanguages, getLanguages,
+
+  // Summary & Profile
   updateSummary, getAll
 } = require("../controllers/skillsController");
 
@@ -113,7 +124,7 @@ router.post("/add-skills", authMiddleware, addSkills);
  *       200:
  *         description: Skill deleted successfully
  */
-router.delete("/delete-skill", authMiddleware, deleteSkill);
+router.delete("/delete-skills", authMiddleware, deleteSkill);
 
 /**
  * @swagger
@@ -192,7 +203,6 @@ router.delete("/delete-education", authMiddleware, deleteEducation);
  */
 router.get("/get-education", authMiddleware, getEducation);
 
-// Experience
 /**
  * @swagger
  * /api/skills/add-experience:
@@ -216,6 +226,8 @@ router.get("/get-education", authMiddleware, getEducation);
  *       201:
  *         description: Experience added successfully
  */
+
+
 router.post("/add-experience", authMiddleware, addExperience);
 
 /**
@@ -419,5 +431,11 @@ router.post("/update-summary", authMiddleware, updateSummary);
  *         description: All user profile data (skills, education, etc.)
  */
 router.get("/get-all", authMiddleware, getAll);
+
+router.put("/update-skills", authMiddleware, updateSkill);
+router.put("/update-education", authMiddleware, updateEducation);
+router.put("/update-experience", authMiddleware, updateExperience);
+router.put("/update-certifications", authMiddleware, updateCertifications);
+router.put("/update-languages", authMiddleware, updateLanguages);
 
 module.exports = router;
