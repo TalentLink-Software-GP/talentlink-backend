@@ -13,6 +13,7 @@ const setupSwagger = require("./swagger");
 const post = require("./routes/postsRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const socketIo = require("socket.io");
+const videoMeetingRoutes = require('./routes/videoMeetingroutes');
 
 
 dotenv.config();
@@ -52,6 +53,8 @@ app.use("/api/users", userDataRoutes);
 app.use("/api/organization", organaizationRouts);
 app.use("/api/job", jobRoutes);
 app.use('/api', messageRoutes);
+app.use('/api', videoMeetingRoutes);
+
 
 setupSwagger(app);
 
@@ -61,76 +64,115 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
 
 const activeConnections = new Map();
 
-
-//sockets
 io.on("connection", (socket) => {
-    console.log("User connected: " + socket.id);
-  
-    // Add rate limiting if needed
-    let messageCount = 0;
-    let lastResetTime = Date.now();
+  console.log("User connected: " + socket.id);
+  let userId = null;
 
-    socket.on("sendMessage", (data) => {
-        const now = Date.now();
-        if (now - lastResetTime > 60000) { 
-          messageCount = 0;
-          lastResetTime = now;
-        }
-      
-        if (messageCount < 100) { 
+ 
+  let messageCount = 0;
+  let lastResetTime = Date.now();
+
+  socket.on("sendMessage", (data) => {
+      try {
+          const now = Date.now();
+          if (now - lastResetTime > 60000) { 
+              messageCount = 0;
+              lastResetTime = now;
+          }
+          
+          if (messageCount >= 100) {
+              console.log("Rate limit exceeded for socket:", socket.id);
+              return socket.emit('rateLimitExceeded', { 
+                  userId: data.senderId,
+                  limit: 100,
+                  window: 'minute'
+              });
+          }
+          
           messageCount++;
-      
+
+          if (!data.senderId || !data.receiverId || !data.message) {
+              throw new Error('Invalid message format');
+          }
+
           const messageWithTimestamp = {
-            ...data,
-            timestamp: new Date().toISOString(),
+              ...data,
+              timestamp: new Date().toISOString(),
           };
-      
-          io.emit("receiveMessage", messageWithTimestamp);
-        } else {
-          console.log("Rate limit exceeded for socket:", socket.id);
-        }
-      });
-  
-    // socket.on("sendMessage", async (data) => {
-    //     const now = Date.now();
-    //     if (now - lastResetTime > 60000) { 
-    //       messageCount = 0;
-    //       lastResetTime = now;
-    //     }
-      
-    //     if (messageCount < 100) { 
-    //       messageCount++;
-      
-    //       const messageWithTimestamp = {
-    //         ...data,
-    //         timestamp: new Date().toISOString(),
-    //       };
-      
-    //       // Save to MongoDB
-    //       try {
-    //         const newMessage = new Message({
-    //           senderId: data.senderId,
-    //           receiverId: data.receiverId,
-    //           message: data.message,
-    //           timestamp: messageWithTimestamp.timestamp,
-    //         });
-      
-    //         await newMessage.save();
-    //       } catch (err) {
-    //         console.error("❌ Error saving message:", err);
-    //       }
-      
-    //       // Emit to clients
-    //       io.emit("receiveMessage", messageWithTimestamp);
-    //     } else {
-    //       console.log("Rate limit exceeded for socket:", socket.id);
-    //     }
-    //   });
-      
-    socket.on("disconnect", () => {
-      console.log("User disconnected: " + socket.id);
-    });
+
+          const recipientSocketId = activeConnections.get(data.receiverId)?.socketId;
+          if (recipientSocketId) {
+              io.to(recipientSocketId).emit("receiveMessage", messageWithTimestamp);
+          }
+          
+          socket.emit("receiveMessage", messageWithTimestamp);
+
+        
+
+      } catch (error) {
+          console.error('Message handling error:', error);
+          socket.emit('messageError', { 
+              error: error.message,
+              originalData: data
+          });
+      }
   });
+
+ 
+  socket.on("register", (userID) => {
+      userId = userID;
+      activeConnections.set(userID, {
+          socketId: socket.id,
+          lastActive: Date.now()
+      });
+      console.log(`Registered user ${userID} with socket ${socket.id}`);
+      socket.emit('registrationSuccess', { userId });
+  });
+
+  socket.on('callRequest', (data) => {
+      const recipientSocketId = activeConnections.get(data.receiverId)?.socketId;
+      if (recipientSocketId) {
+          io.to(recipientSocketId).emit('callRequest', data);
+      } else {
+          console.log(`Recipient ${data.receiverId} not found`);
+          socket.emit('callFailed', { 
+              reason: 'recipient_offline',
+              receiverId: data.receiverId
+          });
+      }
+  });
+
+  socket.on('callAccepted', (data) => {
+    console.log(`Call accepted: ${JSON.stringify(data)}`);
+    
+    io.emit('callAccepted', data);
+    
+   
+  });
+
+  socket.on('callRejected', (data) => {
+      const callerSocketId = activeConnections.get(data.callerId)?.socketId;
+      if (callerSocketId) {
+          io.to(callerSocketId).emit('callRejected', data);
+      }
+  });
+
+  socket.on('callEnded', (data) => {
+      const callerSocketId = activeConnections.get(data.callerId)?.socketId;
+      const receiverSocketId = activeConnections.get(data.receiverId)?.socketId;
+      
+      if (callerSocketId) io.to(callerSocketId).emit('callEnded', data);
+      if (receiverSocketId) io.to(receiverSocketId).emit('callEnded', data);
+  });
+
+ 
+  socket.on("disconnect", () => {
+      console.log("User disconnected: " + socket.id);
+      if (userId) {
+          activeConnections.delete(userId);
+      }
+  });
+});
   
 
 server.listen(PORT, "0.0.0.0",() => {
