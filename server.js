@@ -13,7 +13,6 @@ const setupSwagger = require("./swagger");
 const post = require("./routes/postsRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const socketIo = require("socket.io");
-const videoMeetingRoutes = require('./routes/videoMeetingroutes');
 
 
 dotenv.config();
@@ -53,7 +52,6 @@ app.use("/api/users", userDataRoutes);
 app.use("/api/organization", organaizationRouts);
 app.use("/api/job", jobRoutes);
 app.use('/api', messageRoutes);
-app.use('/api', videoMeetingRoutes);
 
 
 setupSwagger(app);
