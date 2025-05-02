@@ -13,6 +13,7 @@ const setupSwagger = require("./swagger");
 const post = require("./routes/postsRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const socketIo = require("socket.io");
+const applications=require("./routes/applicationRoutes");
 
 
 dotenv.config();
@@ -34,13 +35,7 @@ const io = socketIo(server, {
 
 app.use(cors());
 app.use(express.json());
-// io.on('connection', (socket) => {
-//     console.log('New socket connection established');
-//     console.log(socket.id,"awwad Joined the chat");
-//     socket.on("test",(msg)=>{
-//         console.log(msg);
-//     });
-// });
+
 
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -52,6 +47,7 @@ app.use("/api/users", userDataRoutes);
 app.use("/api/organization", organaizationRouts);
 app.use("/api/job", jobRoutes);
 app.use('/api', messageRoutes);
+app.use('/api/applications', applications);
 
 
 setupSwagger(app);
@@ -156,11 +152,36 @@ io.on("connection", (socket) => {
   });
 
   socket.on('callEnded', (data) => {
-      const callerSocketId = activeConnections.get(data.callerId)?.socketId;
-      const receiverSocketId = activeConnections.get(data.receiverId)?.socketId;
+    try {
+      console.log('Call ended received:', data);
       
-      if (callerSocketId) io.to(callerSocketId).emit('callEnded', data);
-      if (receiverSocketId) io.to(receiverSocketId).emit('callEnded', data);
+      if (!data.callerId || !data.receiverId) {
+        console.error('Invalid callEnded data:', data);
+        return;
+      }
+  
+      const callerSocket = activeConnections.get(data.callerId)?.socketId;
+      const receiverSocket = activeConnections.get(data.receiverId)?.socketId;
+  
+      const emitWithAck = (socketId, event, data) => {
+        if (socketId) {
+          io.to(socketId).timeout(5000).emit(event, data, (err) => {
+            if (err) {
+              console.error(`Failed to emit ${event} to ${socketId}:`, err);
+            }
+          });
+        }
+      };
+  
+      emitWithAck(callerSocket, 'callEnded', data);
+      emitWithAck(receiverSocket, 'callEnded', data);
+  
+      activeConnections.delete(data.callerId);
+      activeConnections.delete(data.receiverId);
+      
+    } catch (err) {
+      console.error('Error handling callEnded:', err);
+    }
   });
 
  
