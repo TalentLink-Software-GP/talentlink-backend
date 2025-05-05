@@ -5,7 +5,7 @@ require("dotenv").config();
 
 const authenticateToken = async (req, res, next) => {
   const token = req.header("Authorization");
- 
+
 
   if (!token) {
     return res.status(401).json({ error: "Access Denied. No token provided." });
