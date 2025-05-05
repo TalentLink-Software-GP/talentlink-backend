@@ -13,9 +13,7 @@ const setupSwagger = require("./swagger");
 const post = require("./routes/postsRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const socketIo = require("socket.io");
-const videoMeetingRoutes = require('./routes/videoMeetingroutes');
 const applications=require("./routes/applicationRoutes");
-
 
 
 dotenv.config();
@@ -156,11 +154,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on('callEnded', (data) => {
-      const callerSocketId = activeConnections.get(data.callerId)?.socketId;
-      const receiverSocketId = activeConnections.get(data.receiverId)?.socketId;
-      
-      if (callerSocketId) io.to(callerSocketId).emit('callEnded', data);
-      if (receiverSocketId) io.to(receiverSocketId).emit('callEnded', data);
     try {
       console.log('Call ended received:', data);
       

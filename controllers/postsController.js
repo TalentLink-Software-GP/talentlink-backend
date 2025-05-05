@@ -1,38 +1,42 @@
 const Post = require("../models/posts");
 require("dotenv").config();
 const mongoose = require('mongoose');
+const User = require("../models/User");  
+const Organization = require("../models/Organization");
 
 
-const postsCreate= async(req, res) =>{
+const postsCreate = async (req, res) => {
+  console.log("=== REQUEST DETAILS ===0");
+
   try {
-    const { content } = req.body;
+    console.log("REQ.HEADERS:", req.headers);
+    console.log("REQ.USER:", req.user);
 
+    const { content } = req.body;
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ error: 'Post content is required' });
     }
-    
+
     const newPost = new Post({
-      author: req.user.name, 
+      author: req.user.name,
       username: req.user.username,
       content,
       avatarUrl: req.user.avatarUrl,
     });
-    console.log("Authenticated User:", req.user);
-
 
     const savedPost = await newPost.save();
-
     res.status(201).json({
       message: 'Post created successfully',
-      id: savedPost._id
+      id: savedPost._id,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Create post error:", err);
     res.status(500).json({ error: 'Server error' });
   }
 };
-
 const updatePost= async(req, res) =>{
+  console.log("=== REQUEST DETAILS ===3");
+
     try {
         const { content } = req.body;
         const postId = req.params.id;
@@ -59,6 +63,8 @@ const updatePost= async(req, res) =>{
  
 };
 const deletePost= async(req, res) =>{
+  console.log("=== REQUEST DETAILS ===2");
+
   try {
     const postId = req.params.id;
 
@@ -80,7 +86,7 @@ const deletePost= async(req, res) =>{
 };
 const getposts= async(req, res) =>{
 
-
+console.log("=== REQUEST DETAILS ===");
    try {
         const page = parseInt(req.query.page) || 1;
         const limit = 10;
@@ -94,19 +100,29 @@ const getposts= async(req, res) =>{
         const totalPosts = await Post.countDocuments({});
         const hasMore = skip + limit < totalPosts;
     
-        const formattedPosts = posts.map(post => ({
-          _id: post._id,
-          //  authorUsername:req.post.username,//////////////////////
-          content: post.content,
-          author: post.username, 
-          username: req.user.username, 
-          createdAt: post.createdAt,
-          avatarUrl: post.avatarUrl || '',
-          isLiked: post.likes.includes(req.user.username),
-          likeCount: post.likes.length,
-          comments: post.comments || [],
-          isOwner: post.username === req.user.username // Add isOwner flag
+        const formattedPosts = await Promise.all(posts.map(async post => {
+          // Try to find in User collection
+          let authorData = await User.findOne({ username: post.username });
+        
+          // If not found in User, try Organization
+          if (!authorData) {
+            authorData = await Organization.findOne({ username: post.username });
+          }
+        
+          return {
+            _id: post._id,
+            content: post.content,
+            author: post.username,
+            username: authorData?.username || '',
+            avatarUrl: authorData?.avatarUrl || '', // from User or Organization
+            createdAt: post.createdAt,
+            isLiked: post.likes.includes(req.user.username),
+            likeCount: post.likes.length,
+            comments: post.comments || [],
+            isOwner: post.username === req.user.username,
+          };
         }));
+        console.log("Formatted Posts:", formattedPosts);
     
         res.status(200).json({ posts: formattedPosts, hasMore });
       } catch (err) {
@@ -168,7 +184,7 @@ const addComment = async (req, res) => {
       avatarUrl: req.user.avatarUrl || '',
       createdAt: new Date()
     };
-
+console.log("New Comment:", newComment);
     post.comments.push(newComment);
     await post.save();
 

@@ -1,28 +1,72 @@
-const Organaization = require("../models/Organization")
+const Organization = require('../models/Organization'); // fixed import
 const {uploadToGCS, bucket} = require("../utils/gcsUploader");
 
-const getProfileData = async (req,res) => {
-    try{
-        const organaizationId = req.user.id;
-        const organaization = await Organaization.findById(organaizationId)
-        if(!organaization){
-            return res.status(404).json({ message: "Organiazation Not Found" });
-        }
-        return res.status(200).json({
-            name: organaization.name,
-            industry:organaization.industry, 
-            websiteURL: organaization.websiteURL,
-            country: organaization.country,
-            address1: organaization.address1,
-            address2: organaization.address2,
-            email:organaization.email,
-            avatarUrl: organaization.avatarUrl,
-        });
-    }catch(error){
-        console.error(error);
-        return res.status(500).json({message: "Internal Server Error"});
+const getOrgDataWithuserName = async (req, res) => {
+  try {
+    console.log("🔔 Request received at getOrgDataWithuserName");
+    console.log("🔍 Query parameters:", req.query);
+    console.log("🔍 Headers:", req.headers);
+    
+    const { userName } = req.query;
+
+    if (!userName) {
+      console.log("❌ Missing username in query");
+      return res.status(400).json({ message: "Missing username in query" });
     }
+
+    console.log("🔍 Searching for organization with username:", userName);
+    const user = await Organization.findOne({ username: userName }).select("+avatarUrl");
+
+    if (!user) {
+      console.log("❌ Organization not found for username:", userName);
+      return res.status(404).json({ message: "User Not Found" });
+    }
+
+    console.log("✅ Found organization:", user);
+    return res.status(200).json({
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      userId: user._id,
+
+
+    });
+  } catch (error) {
+    console.error("🔥 Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
 };
+
+//byId 
+const getProfileData = async (req, res) => {
+    try {
+      const organizationId = req.user.id;
+      console.log("📥 getProfileData hit for ID:", organizationId);
+  
+      const organization = await Organization.findById(organizationId);
+      if (!organization) {
+        console.log("❌ Organization not found");
+        return res.status(404).json({ message: "Organization Not Found" });
+      }
+  
+      console.log("✅ Found organization:", organization.username);
+  
+      return res.status(200).json({
+        name: organization.name,
+        username: organization.username,
+        industry: organization.industry,
+        websiteURL: organization.websiteURL,
+        country: organization.country,
+        address1: organization.address1,
+        address2: organization.address2,
+        email: organization.email,
+        avatarUrl: organization.avatarUrl,
+        id: organization._id,
+      });
+    } catch (error) {
+      console.error("❌ Error in getProfileData:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+  };
 
 const updateAvatar = async (req,res) => {
     try{
@@ -33,7 +77,7 @@ const updateAvatar = async (req,res) => {
             return res.status(400).json({ message: "No file uploaded." });
         }
         const imageUrl = await uploadToGCS(file);
-        const organaization = await Organaization.findByIdAndUpdate(
+        const organaization = await Organization.findByIdAndUpdate(
             organaizationId,
             {avatarUrl: imageUrl},
             {new: true}
@@ -64,4 +108,4 @@ const deleteAvatar = async (req,res) => {
     }
 }
 
-module.exports = {getProfileData,updateAvatar,deleteAvatar}
+module.exports = {getProfileData,updateAvatar,deleteAvatar,getOrgDataWithuserName}

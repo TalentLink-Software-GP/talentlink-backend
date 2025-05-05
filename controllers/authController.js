@@ -13,7 +13,7 @@ const register = async (req, res) => {
     const {role} = req.body;
     if(role === "Organization")
       {
-        const { name, industry, websiteURL, country, address1, address2, email, password } = req.body;
+        const { name, username,industry, websiteURL, country, address1, address2, email, password } = req.body;
         if (!name || !industry || !country || !address1|| !email || !password)
           {
             return res.status(400).json({ error: "All fields are required" });
@@ -27,6 +27,7 @@ const register = async (req, res) => {
 
           const organaization = new Organaization({
             name,
+            username,
             industry,
             websiteURL,
             country,
@@ -169,8 +170,11 @@ const login = async (req, res) => {
     }
     else if(organaization){
       isMatch = await bcrypt.compare(password, organaization.password);
-      token = jwt.sign({ id: organaization._id, role: "Organization" , industry: organaization.industry, email: organaization.email, name: organaization.name}, process.env.JWT_SECRET, { expiresIn: "1d" });
+      token = jwt.sign({ id: organaization._id, role: "Organization",avatarUrl:organaization.avatarUrl , industry: organaization.industry, email: organaization.email, name: organaization.name, username:organaization.username,
+      }, process.env.JWT_SECRET, { expiresIn: "1d" });
       console.log(organaization.email);
+      console.log(organaization.avatarUrl);
+
     }
 
     if (!isMatch) {

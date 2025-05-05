@@ -190,7 +190,7 @@ router.get("/get-user-id", authMiddleware, async (req, res) => {
 
     if (!user) return res.status(404).json({ msg: "User not found" });
 
-    res.json({ userId: user._id, username: user.username });
+    res.json({ userId: user._id, username: user.username,avatarUrl: user.avatarUrl, });
   } catch (err) {
     console.error("Error in /get-user-id route:", err); // Add this
     res.status(500).json({ msg: "Server error" });

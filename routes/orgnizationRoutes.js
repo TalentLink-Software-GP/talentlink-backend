@@ -3,12 +3,16 @@ const {
   getProfileData,
   updateAvatar,
   deleteAvatar,
+  getOrgDataWithuserName,
 } = require('../controllers/organizationController')
 
 const authMiddleware = require('../middleware/authMiddleware')
 const upload = require("../middleware/multer");
 
 const router = express.Router();
+
+router.get("/getOrgDataWithuserName" ,getOrgDataWithuserName);
+
 
 router.get("/getOrgData", authMiddleware, getProfileData);
 
