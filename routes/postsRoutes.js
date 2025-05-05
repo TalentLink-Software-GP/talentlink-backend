@@ -73,6 +73,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 // create post for postcard creating post
 router.post('/createPost', authMiddleware, postsCreate);
 
+
 //update post for 3-dot
 router.put('/updatePost/:id', authMiddleware, updatePost);
 
@@ -82,6 +83,8 @@ router.delete('/deletePost/:id', authMiddleware,deletePost );
 
 // get post by id for feed 
   router.get('/get-posts', authMiddleware, getposts);
+  //  router.get('/get-posts', authMiddleware, getposts);
+
 
   router.get('/getuser-posts-byusername/:username',authMiddleware, getpostsbyusername);
 

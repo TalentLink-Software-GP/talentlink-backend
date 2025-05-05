@@ -3,6 +3,7 @@ const router = express.Router();
 const Message = require('../models/Message');
 const User = require('../models/User');
 const mongoose = require('mongoose');
+const Organization = require('../models/Organization');
 
 router.post('/messages', async (req, res) => {
   const { senderId, receiverId, message } = req.body;
@@ -44,9 +45,15 @@ router.get('/users/search', async (req, res) => {
   try {
     const users = await User.find({
       username: { $regex: q, $options: 'i' }
-    }).select('username email profilePhoto');
+      
+    }).select('username email avatarUrl');//avatarUrl
 
-    res.json(users);
+    const org = await Organization.find({
+      username: { $regex: q, $options: 'i' }
+    }).select('username email avatarUrl');
+    const result=users.concat(org);
+console.log(org);
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Failed to search users' });
   }
@@ -76,21 +83,36 @@ router.get('/chat-history/:userId', async (req, res) => {
           ? message.receiverId
           : message.senderId;
 
-      if (!userMap.has(otherUserId.toString())) {
-        userMap.set(otherUserId.toString(), {
+      const key = otherUserId.toString();
+
+      if (!userMap.has(key)) {
+        userMap.set(key, {
           userId: otherUserId,
           lastMessageTimestamp: message.timestamp
         });
       }
     });
 
-    const userIds = Array.from(userMap.keys());
-    const users = await User.find({ _id: { $in: userIds } });
+    const otherUserIds = Array.from(userMap.keys()).map(id => new ObjectId(id));
 
-    const result = users.map((user) => ({
+    const [users, orgs] = await Promise.all([
+      User.find({ _id: { $in: otherUserIds } }),
+      Organization.find({ _id: { $in: otherUserIds } })
+    ]);
+
+    const usersWithType = users.map(user => ({
       ...user._doc,
+      type: 'user',
       lastMessageTimestamp: userMap.get(user._id.toString()).lastMessageTimestamp
     }));
+
+    const orgsWithType = orgs.map(org => ({
+      ...org._doc,
+      type: 'organization',
+      lastMessageTimestamp: userMap.get(org._id.toString()).lastMessageTimestamp
+    }));
+
+    const result = [...usersWithType, ...orgsWithType];
 
     res.status(200).json(result);
   } catch (error) {
@@ -98,6 +120,7 @@ router.get('/chat-history/:userId', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch chat history' });
   }
 });
+
 
   async function updateTimestamps() {
     try {
