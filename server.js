@@ -47,7 +47,6 @@ app.use("/api/users", userDataRoutes);
 app.use("/api/organization", organaizationRouts);
 app.use("/api/job", jobRoutes);
 app.use('/api', messageRoutes);
-app.use('/api', videoMeetingRoutes);
 
 app.use('/api/applications', applications);
 
