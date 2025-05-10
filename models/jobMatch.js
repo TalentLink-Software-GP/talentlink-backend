@@ -12,7 +12,7 @@ const jobMatchSchema = new mongoose.Schema({
     required: true,
   },
   matchScore: {
-    type: Number, // Save as percentage (0–100)
+    type: Number,
     required: true,
   },
   createdAt: {
