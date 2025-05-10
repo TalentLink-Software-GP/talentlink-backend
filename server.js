@@ -15,6 +15,7 @@ const post = require("./routes/postsRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const socketIo = require("socket.io");
 const applications=require("./routes/applicationRoutes");
+const jobMatch = require('./routes/jobMatchRoutes');
 
 
 dotenv.config();
@@ -51,6 +52,7 @@ app.use('/api', messageRoutes);
 app.use('/api/location',locationRoutes)
 
 app.use('/api/applications', applications);
+app.use('/api/jobMatch',jobMatch)
 
 
 setupSwagger(app);
