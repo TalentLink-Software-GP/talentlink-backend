@@ -430,7 +430,7 @@ router.post("/update-summary", authMiddleware, updateSummary);
  *       200:
  *         description: All user profile data (skills, education, etc.)
  */
-router.get("/get-all", authMiddleware, getAll);
+router.post("/get-all", authMiddleware, getAll);
 
 router.put("/update-skills", authMiddleware, updateSkill);
 router.put("/update-education", authMiddleware, updateEducation);

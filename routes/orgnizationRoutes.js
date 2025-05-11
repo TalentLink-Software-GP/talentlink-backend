@@ -14,7 +14,7 @@ const router = express.Router();
 router.get("/getOrgDataWithuserName" ,getOrgDataWithuserName);
 
 
-router.get("/getOrgData", authMiddleware, getProfileData);
+router.post("/getOrgData", authMiddleware, getProfileData);
 
 // ✅ FIXED THIS LINE
 router.post("/updateAvatar", authMiddleware, upload.single("avatar"), updateAvatar);

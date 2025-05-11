@@ -11,12 +11,19 @@ const skillsRoutes = require("./routes/skillsRouts");
 const userDataRoutes = require("./routes/userDataRouts");
 const organaizationRouts = require('./routes/orgnizationRoutes');
 const jobRoutes = require('./routes/jobsRoutes');
+const locationRoutes = require('./routes/locationRoutes');
 const setupSwagger = require("./swagger");
 const post = require("./routes/postsRoutes");
 const messageRoutes = require("./routes/messageRoutes");
+
 const applications = require("./routes/applicationRoutes");
 const User = require('./models/User');
 const { sendNotification } = require('./services/firebaseAdmin');
+
+const socketIo = require("socket.io");
+const jobMatch = require('./routes/jobMatchRoutes');
+
+
 
 dotenv.config();
 
@@ -38,7 +45,13 @@ app.use("/api/users", userDataRoutes);
 app.use("/api/organization", organaizationRouts);
 app.use("/api/job", jobRoutes);
 app.use('/api', messageRoutes);
+
+
+app.use('/api/location',locationRoutes)
+
+
 app.use('/api/applications', applications);
+app.use('/api/jobMatch',jobMatch)
 
 setupSwagger(app);
 

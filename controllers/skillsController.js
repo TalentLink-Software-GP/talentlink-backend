@@ -1,4 +1,5 @@
 const Skills = require("../models/Skills");
+const User = require("../models/User");
 
 const getOrCreateSkillsDoc = async (userId) => {
   let userDoc = await Skills.findOne({ userId });
@@ -82,14 +83,35 @@ const getField = (field) => async (req, res) => {
 };
 
 const getAll = async (req, res) => {
-  const userId = req.user.id;
+  const requesterId = req.user?.id; // From token
+  const { username } = req.body;
+
+  if (!requesterId) {
+    return res.status(401).json({ message: "Unauthorized: No token provided or invalid token" });
+  }
 
   try {
-    const userDoc = await Skills.findOne({ userId });
+    let targetUserId;
+
+    if (username) {
+      const user = await User.findOne({ username });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      targetUserId = user._id;
+    } else {
+      targetUserId = requesterId;
+    }
+
+    const userDoc = await Skills.findOne({ userId: targetUserId });
     if (!userDoc) {
       return res.status(404).json({
-        skills: [], education: [], experience: [],
-        certifications: [], languages: [], summary: ""
+        skills: [],
+        education: [],
+        experience: [],
+        certifications: [],
+        languages: [],
+        summary: ""
       });
     }
 
@@ -98,6 +120,8 @@ const getAll = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
 
 const updateItem = (field) => async (req, res) => {
   const { oldItem, newItem } = req.body;

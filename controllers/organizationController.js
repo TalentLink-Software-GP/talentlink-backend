@@ -38,35 +38,34 @@ const getOrgDataWithuserName = async (req, res) => {
 
 //byId 
 const getProfileData = async (req, res) => {
-    try {
-      const organizationId = req.user.id;
-      console.log("📥 getProfileData hit for ID:", organizationId);
-  
-      const organization = await Organization.findById(organizationId);
-      if (!organization) {
-        console.log("❌ Organization not found");
-        return res.status(404).json({ message: "Organization Not Found" });
-      }
-  
-      console.log("✅ Found organization:", organization.username);
-  
-      return res.status(200).json({
-        name: organization.name,
-        username: organization.username,
-        industry: organization.industry,
-        websiteURL: organization.websiteURL,
-        country: organization.country,
-        address1: organization.address1,
-        address2: organization.address2,
-        email: organization.email,
-        avatarUrl: organization.avatarUrl,
-        id: organization._id,
-      });
-    } catch (error) {
-      console.error("❌ Error in getProfileData:", error);
-      return res.status(500).json({ message: "Internal Server Error" });
+  try {
+    const organizationId = req.body?.id || req.user?.id;
+    if (!organizationId) {
+      return res.status(400).json({ message: "Organization ID not provided" });
     }
-  };
+
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+      return res.status(404).json({ message: "Organization Not Found" });
+    }
+
+    return res.status(200).json({
+      name: organization.name,
+      username: organization.username,
+      industry: organization.industry,
+      websiteURL: organization.websiteURL,
+      country: organization.country,
+      address1: organization.address1,
+      address2: organization.address2,
+      email: organization.email,
+      avatarUrl: organization.avatarUrl,
+      id: organization._id,
+    });
+  } catch (error) {
+    console.error("❌ Error in getProfileData:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 const updateAvatar = async (req,res) => {
     try{
