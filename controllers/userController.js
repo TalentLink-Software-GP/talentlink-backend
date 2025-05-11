@@ -4,17 +4,29 @@ const extractTextFromGCS = require("../utils/extractTextFromGCS");
 const { Readable } = require('stream');
 const openai = require("../utils/openaiClient");
 const Skills = require('../models/Skills');
+const Organization = require("../models/Organization");
 
 const getUserData = async (req,res) => {
     try{
       console.log("Distination Reached")
       const { userName } = req.query;
+      
         const user = await Users.findOne({ username: userName });
+      if(user)
+      {
+        return res.status(200).json({name: user.name, avatarUrl: user.avatarUrl});
 
-        if(!user){
+      }
+      const organization = await Organization.findOne({ username: userName });
+        if(organization){
+          await Organization.findOne({ username: userName });
+          return res.status(200).json({name: organization.name, avatarUrl: organization.avatarUrl});
+        }
+
+       else{
             return res.status(404).json({message: "User Not Found"});
         }
-        return res.status(200).json({name: user.name, avatarUrl: user.avatarUrl});
+
     }
     catch(error){
         console.error(error);

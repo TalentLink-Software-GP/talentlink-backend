@@ -21,6 +21,16 @@ const userSchema = new mongoose.Schema({
     cvUrl: { type: String, required: false },
     analyzedCV:{type: String, required: false},
     createdAt: { type: Date, default: Date.now },
+//for online status
+    online: { type: Boolean, default: false },
+    lastSeen: { type: Date },
+    socketIds: { type: [String], default: [] },
+    //for the notfications
+     fcmTokens: { type: [String], default: [] }, 
+    notificationSettings: {
+      chat: { type: Boolean, default: true },
+      calls: { type: Boolean, default: true }
+    }
   });
   
 const User = mongoose.model('User', userSchema);

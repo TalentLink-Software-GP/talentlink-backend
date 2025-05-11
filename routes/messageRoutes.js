@@ -4,15 +4,101 @@ const Message = require('../models/Message');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 const Organization = require('../models/Organization');
+const { sendNotification } = require('../services/firebaseAdmin');
+
+
+// router.post('/messages', async (req, res) => {
+//   const { senderId, receiverId, message } = req.body;
+
+//   try {
+//     const newMessage = new Message({ senderId, receiverId, message });
+//     await newMessage.save();
+    
+//     // Get receiver's FCM tokens
+//     const receiver = await User.findById(receiverId);
+//     if (receiver?.fcmTokens?.length > 0 && receiver.notificationSettings?.chat) {
+//       const sender = await User.findById(senderId);
+      
+//       await sendNotification(
+//         receiver.fcmTokens,
+//         'New Message',
+//         `${sender?.username || 'Someone'}: ${message}`,
+//         { 
+//           type: 'chat', 
+//           senderId,
+//           messageId: newMessage._id.toString(),
+//           route: '/chat'
+//         }
+//       );
+//     }
+    
+//     res.status(201).json(newMessage);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Failed to send message' });
+//   }
+// });
+
 
 router.post('/messages', async (req, res) => {
   const { senderId, receiverId, message } = req.body;
 
   try {
+    // Validate input
+    if (!senderId || !receiverId || !message) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
     const newMessage = new Message({ senderId, receiverId, message });
     await newMessage.save();
+
+    // Get users with proper error handling
+    const [receiver, sender] = await Promise.all([
+      User.findById(receiverId).lean(),
+      User.findById(senderId).lean()
+    ]);
+
+    if (!receiver) {
+      console.error("❌ Error: Receiver not found");
+      return res.status(201).json(newMessage); // Still return success for the message
+    }
+
+    if (!sender) {
+      console.error("❌ Warning: Sender not found, using default values");
+    }
+
+    // Check notification settings and tokens
+    const canSendNotification = 
+      receiver.fcmTokens?.length > 0 && 
+      receiver.notificationSettings?.chat !== false;
+
+    if (canSendNotification) {
+      console.log(`Sending notification from ${sender?.username || 'Unknown'} to ${receiver.username}`);
+      
+      try {
+        await sendNotification(
+          receiver.fcmTokens,
+          'New Message',
+          `${sender?.username || 'Someone'}: ${message}`,
+          { 
+            type: 'chat', 
+            senderId,
+            receiverId, // Add receiverId to data
+            messageId: newMessage._id.toString(),
+            route: '/chat'
+          }
+        );
+      } catch (err) {
+        console.error("❌ Error sending notification:", err);
+      }
+    } else {
+      console.log(`Notification not sent to ${receiver.username}. Reasons:`);
+      if (!receiver.fcmTokens?.length) console.log("- No FCM tokens");
+      if (receiver.notificationSettings?.chat === false) console.log("- Chat notifications disabled");
+    }
+
     res.status(201).json(newMessage);
   } catch (error) {
+    console.error('Failed to send message:', error);
     res.status(500).json({ error: 'Failed to send message' });
   }
 });
@@ -203,7 +289,8 @@ router.post('/mark-as-read', async (req, res) => {
     res.status(500).json({ error: 'Failed to update messages' });
   }
 });
-  
+
+
   
 
 module.exports = router;

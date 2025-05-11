@@ -179,34 +179,98 @@ router.get("/get-user-id", authMiddleware, async (req, res) => {
 
   try {
 
-    // Check if req.user.email is available and use it to find the user by email
     const user = await User.findById(req.user.id);
     console.log(user);
 
     console.log("Decoded token email:", req.user.email);
 
     
-    console.log("Fetched user:", user); // Add this line
+    console.log("Fetched user:", user); 
 
     if (!user) return res.status(404).json({ msg: "User not found" });
 
     res.json({ userId: user._id, username: user.username,avatarUrl: user.avatarUrl, });
   } catch (err) {
-    console.error("Error in /get-user-id route:", err); // Add this
+    console.error("Error in /get-user-id route:", err); 
     res.status(500).json({ msg: "Server error" });
   }
 });
 router.get('/get-current-user', authMiddleware, async (req, res) => {
   try {
-    console.log('Current User:', req.user);  // Debug log to see the user data
+    console.log('Current User:', req.user);  
 
     res.status(200).json({
       name: req.user.username,
-      avatarUrl: req.user.avatarUrl || '',  // Ensure avatarUrl exists
+      avatarUrl: req.user.avatarUrl || '',  
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch current user' });
+  }
+});
+
+
+router.get('/:userId/status', async (req, res) => {
+  console.log("Received request for user status");
+  try {
+    const user = await User.findById(req.params.userId, 'online lastSeen');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    res.json({ 
+      online: user.online, 
+      lastSeen: user.lastSeen 
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/save-fcm-token', async (req, res) => {
+  const { userId, fcmToken } = req.body;
+
+  try {
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { 
+        $addToSet: { fcmTokens: fcmToken }, 
+        $set: { updatedAt: new Date() } 
+      },
+      { new: true }
+    );
+
+    console.log(`FCM Token registered for user ${userId}: ${fcmToken}`);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Error saving FCM token:', error);
+    res.status(500).json({ error: 'Failed to save FCM token' });
+  }
+});
+
+
+//for admin
+router.post('/cleanup-fcm-tokens', async (req, res) => {
+  try {
+    const users = await User.find({ fcmTokens: { $exists: true, $ne: [] } });
+    
+    for (const user of users) {
+      const validTokens = [];
+      
+      for (const token of user.fcmTokens) {
+        if (typeof token === 'string' && token.length > 0) {
+          validTokens.push(token);
+        }
+      }
+      
+      if (validTokens.length !== user.fcmTokens.length) {
+        await User.findByIdAndUpdate(user._id, { fcmTokens: validTokens });
+        console.log(`Cleaned tokens for user ${user._id}`);
+      }
+    }
+    
+    res.status(200).json({ success: true, cleaned: users.length });
+  } catch (error) {
+    console.error('Error cleaning tokens:', error);
+    res.status(500).json({ error: 'Failed to clean tokens' });
   }
 });
 
