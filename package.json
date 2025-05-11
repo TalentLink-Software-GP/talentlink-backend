@@ -30,6 +30,7 @@
     "dotenv": "^16.5.0",
     "email-verification": "^0.4.6",
     "express": "^4.21.2",
+    "firebase-admin": "^13.3.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.14.2",
     "mongoose": "^8.14.0",
