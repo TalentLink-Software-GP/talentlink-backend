@@ -7,43 +7,11 @@ const Organization = require('../models/Organization');
 const { sendNotification } = require('../services/firebaseAdmin');
 
 
-// router.post('/messages', async (req, res) => {
-//   const { senderId, receiverId, message } = req.body;
-
-//   try {
-//     const newMessage = new Message({ senderId, receiverId, message });
-//     await newMessage.save();
-    
-//     // Get receiver's FCM tokens
-//     const receiver = await User.findById(receiverId);
-//     if (receiver?.fcmTokens?.length > 0 && receiver.notificationSettings?.chat) {
-//       const sender = await User.findById(senderId);
-      
-//       await sendNotification(
-//         receiver.fcmTokens,
-//         'New Message',
-//         `${sender?.username || 'Someone'}: ${message}`,
-//         { 
-//           type: 'chat', 
-//           senderId,
-//           messageId: newMessage._id.toString(),
-//           route: '/chat'
-//         }
-//       );
-//     }
-    
-//     res.status(201).json(newMessage);
-//   } catch (error) {
-//     res.status(500).json({ error: 'Failed to send message' });
-//   }
-// });
-
 
 router.post('/messages', async (req, res) => {
   const { senderId, receiverId, message } = req.body;
 
   try {
-    // Validate input
     if (!senderId || !receiverId || !message) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -51,7 +19,6 @@ router.post('/messages', async (req, res) => {
     const newMessage = new Message({ senderId, receiverId, message });
     await newMessage.save();
 
-    // Get users with proper error handling
     const [receiver, sender] = await Promise.all([
       User.findById(receiverId).lean(),
       User.findById(senderId).lean()
@@ -59,14 +26,13 @@ router.post('/messages', async (req, res) => {
 
     if (!receiver) {
       console.error("❌ Error: Receiver not found");
-      return res.status(201).json(newMessage); // Still return success for the message
+      return res.status(201).json(newMessage); 
     }
 
     if (!sender) {
       console.error("❌ Warning: Sender not found, using default values");
     }
 
-    // Check notification settings and tokens
     const canSendNotification = 
       receiver.fcmTokens?.length > 0 && 
       receiver.notificationSettings?.chat !== false;
@@ -82,7 +48,7 @@ router.post('/messages', async (req, res) => {
           { 
             type: 'chat', 
             senderId,
-            receiverId, // Add receiverId to data
+            receiverId, 
             messageId: newMessage._id.toString(),
             route: '/chat'
           }

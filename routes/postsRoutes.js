@@ -6,7 +6,7 @@ const {
   getposts,
   likePost,
   addComment,
-  addReply,getpostsbyusername
+  addReply,getpostsbyusername,getPostById,
 
 }=require("../controllers/postsController");
 const router = express.Router();
@@ -195,6 +195,11 @@ router.post('/:id/comments', authMiddleware, addComment);
  *         description: Server error
  */
 router.post('/:id/comments/:commentId/replies', authMiddleware, addReply); 
+
+
+
+router.get('/:postId', getPostById);
+
 
 module.exports = router;
 

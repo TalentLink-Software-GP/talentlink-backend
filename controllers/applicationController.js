@@ -1,23 +1,36 @@
 const Application = require('../models/Application');
 const mongoose = require("mongoose");
+const { UserNotification, GlobalNotification,orgNotification } = require("../models/Notifications");
+const Organization = require("../models/Organization");
 
 const applicationData=async (req, res) => {
 
     try {
-      const { jobId, jobTitle, matchScore, organizationId } = req.body;
+      const { jobId, jobTitle, matchScore, organizationId,  } = req.body;
       
       if (!req.user || !req.user.id || !req.user.name) {
+// const userId=req.user.id;
+       
+
+
         return res.status(400).json({ 
           message: 'User information missing.'
         });
       }
+
       
       const isValidObjectId = mongoose.Types.ObjectId.isValid(organizationId);
 if (!organizationId || !isValidObjectId) {
+
+  
   return res.status(400).json({
     message: 'Invalid organizationId.',
   });
 }
+
+  const organization = await Organization.findById(organizationId);
+  const username = organization?.username;
+
       const application = new Application({
         userId: req.user.id,
         userName: req.user.name,  
@@ -29,6 +42,23 @@ if (!organizationId || !isValidObjectId) {
       });
       
       const savedApplication = await application.save();
+
+
+
+        const notification = new orgNotification({
+                    
+                    title: `New Job: ${jobTitle}`,
+                    body: `Applied by ${req.user.name}`,
+                    companyId: organizationId,
+                    jobId: jobId,
+                    receiver:username,
+                    sender:req.user.username,
+                });
+                await notification.save();
+        
+                // Send job notification
+
+                
       res.status(201).json(savedApplication);
     } catch (error) {
       console.error('Error saving application:', error);
