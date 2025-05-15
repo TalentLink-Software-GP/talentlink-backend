@@ -8,7 +8,27 @@ const { uploadToGCS, bucket } = require('../utils/gcsUploader');
 const openai = require('../utils/openaiClient');
 const path = require('path');
 const fs = require("fs");
+const { UserNotification, GlobalNotification } = require("../models/Notifications");
+const { sendJobNotification } = require('../services/firebaseAdmin');
+//////fix here ....
+const getJobById = async (req, res) => {
+    try {
+        const {  jobId } = req.params;
 
+      
+
+        const job = await Job.findOne({  _id: jobId });
+        if (!job) {
+            return res.status(404).json({ message: "no job found  " });
+        }
+
+        console.log("📦 Job found:", job);
+        return res.status(200).json(job);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
 
 const getOrgJobs = async (req, res) => {  
     try {
@@ -159,6 +179,11 @@ Match Score:
   }
 };
 
+
+
+///////////////
+
+///here 
 const addJob = async (req,res) => {
     console.log("Reach Add Job");
     try {
@@ -192,6 +217,24 @@ const addJob = async (req,res) => {
           });
           console.log(newJob);
           await newJob.save();
+
+        const users = await User.find({},'fcmTokens');
+        const tokens = users.map(user => user.fcmTokens).filter(Boolean);
+
+        // Save notification to database
+        const notification = new GlobalNotification({
+            
+            title: `New Job: ${title}`,
+            body: `Posted by ${organaization.name}`,
+            companyId: organaizationId,
+            jobId: newJob._id
+        });
+        await notification.save();
+
+        // Send job notification
+        sendJobNotification(tokens, title, organaization.name);
+
+///////////////////////////////
           
           return res.status(201).json({message:"Job Created Successfully", job: newJob});
     } catch (error) {
@@ -246,7 +289,7 @@ const updateJob = async (req, res) => {
         return res.status(500).json({ message: "Error updating job" });
     }
 };
-
+/////////////////////here also // make unreadcount // notfications / //logOut->saadeh// save sign in 
 const smartAddJob = async (req, res) => {
   try {
     const organaizationId = req.user.id;
@@ -328,4 +371,4 @@ ${extractedText}
   }
 };
 
-module.exports = {getOrgJobs,getAllJobs,addJob,deleteJob,updateJob,smartAddJob, getAllJobsUser}
+module.exports = {getOrgJobs,getAllJobs,addJob,deleteJob,updateJob,smartAddJob, getAllJobsUser,getJobById}

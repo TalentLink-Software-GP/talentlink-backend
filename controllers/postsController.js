@@ -3,6 +3,10 @@ require("dotenv").config();
 const mongoose = require('mongoose');
 const User = require("../models/User");  
 const Organization = require("../models/Organization");
+const { AllPrivateUserNotification, GlobalNotification } = require("../models/Notifications");
+const { sendNotification } = require('../services/firebaseAdmin');
+
+
 
 
 const postsCreate = async (req, res) => {
@@ -131,46 +135,55 @@ console.log("=== REQUEST DETAILS ===");
       }
  
 };
-const likePost= async(req, res) =>{
-   try {
-      const postId = req.params.id;
-      const username = req.user.username;
-  
-      const post = await Post.findById(postId);
-      if (!post) return res.status(404).json({ error: 'Post not found' });
-  
-      const hasLiked = post.likes.includes(username);
-  
-      if (hasLiked) {
-        post.likes = post.likes.filter(user => user !== username);
-      } else {
-        post.likes.push(username);
-      }
-  
-      await post.save();
-  
-      res.status(200).json({
-        message: hasLiked ? 'Unliked post' : 'Liked post',
-        isLiked: !hasLiked,
-        likeCount: post.likes.length,
-      });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Error toggling like' });
+const likePost = async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const username = req.user.username;
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+
+    const hasLiked = post.likes.includes(username);
+    if (hasLiked) {
+      post.likes = post.likes.filter(user => user !== username);
+    } else {
+      post.likes.push(username);
+
+      if (username !== post.username) {
+  // Save notification
+  const newNotification = new AllPrivateUserNotification({
+    title: "New Like",
+    body: `${username} liked your post`,
+    postId,
+    type: 'like',
+    sender: username,
+    receiver: post.username
+  });
+  await newNotification.save();
+
+  // Send push notification
+  const user = await User.findOne({ username: post.username });
+  if (user) {
+    await sendNotification([user.firebaseToken], "New Like", `${username} liked your post`);
+  }
+}
     }
+
+    await post.save();
+    res.status(200).json({
+      message: hasLiked ? 'Unliked post' : 'Liked post',
+      isLiked: !hasLiked,
+      likeCount: post.likes.length,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error toggling like' });
+  }
 };
 ///////////comment and reply
 const addComment = async (req, res) => {
-  console.log("=== REQUEST DETAILS ===");
-  console.log("Params:", req.params);
-  console.log("Body:", req.body);
-  console.log("Headers:", req.headers);
-  console.log("User:", req.user);
-
   try {
     const postId = req.params.id;
     const { text } = req.body;
-
     if (!text || text.trim().length === 0) {
       return res.status(400).json({ error: 'Comment text is required' });
     }
@@ -184,14 +197,29 @@ const addComment = async (req, res) => {
       avatarUrl: req.user.avatarUrl || '',
       createdAt: new Date()
     };
-console.log("New Comment:", newComment);
     post.comments.push(newComment);
     await post.save();
 
-    const addedComment = post.comments[post.comments.length - 1];
+    // Save notification
+    const newNotification = new AllPrivateUserNotification({
+      title: "New Comment",
+      body: `${req.user.username} commented on your post`,
+      postId,
+      type: 'comment',
+      sender: req.user.username,
+      receiver: post.username
+    });
+    await newNotification.save();
+
+    // Send push notification
+    const user = await User.findOne({ username: post.username });
+    if (user && user.firebaseToken) {
+      await sendNotification([user.firebaseToken], "New Comment", `${req.user.username} commented on your post`);
+    }
+
     res.status(201).json({
       message: 'Comment added',
-      comment: addedComment
+      comment: newComment
     });
   } catch (err) {
     console.error('Error in addComment:', err);
@@ -274,6 +302,36 @@ const getpostsbyusername = async (req, res) => {
 
 
 
+
+const getPostById = async (req, res) => {
+    try {
+console.log("Received request to get post by ID:", req.params.postId);
+        const { postId } = req.params;
+
+        // Check if postId is not "No postId" and is a valid ObjectId
+        if (!postId || postId === "No postId" || !mongoose.Types.ObjectId.isValid(postId)) {
+                      console.log("no:", req.params.postId);
+
+            return res.status(400).json({ message: 'Invalid or missing post ID' });
+
+        }
+
+        const post = await Post.findById(postId).populate('author');
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+                      console.log("post id found:", req.params.postId);
+
+        res.status(200).json(post);
+       // console.log( post);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+
+
 module.exports = {
     postsCreate,
     updatePost,
@@ -281,7 +339,7 @@ module.exports = {
     getposts,
     likePost,
     addReply,
-    addComment,getpostsbyusername 
+    addComment,getpostsbyusername ,getPostById
    
   };
   

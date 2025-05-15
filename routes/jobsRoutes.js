@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const uploadMiddleware = require("../middleware/multer");
-const { getOrgJobs, getAllJobs, addJob, deleteJob, updateJob, smartAddJob,getAllJobsUser } = require('../controllers/jobController');
+const { getOrgJobs, getAllJobs, addJob, deleteJob, updateJob, smartAddJob,getAllJobsUser,getJobById } = require('../controllers/jobController');
 
 /**
  * @swagger
@@ -77,6 +77,7 @@ router.get("/getorgjobs", authMiddleware, getOrgJobs);
  *         description: No available jobs at the moment
  */
 router.get("/getalljobs", getAllJobs);
+router.get('/job/:jobId',getJobById);
 
 /**
  * @swagger
