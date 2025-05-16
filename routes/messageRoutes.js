@@ -38,7 +38,7 @@ router.post('/messages', async (req, res) => {
       receiver.notificationSettings?.chat !== false;
 
     if (canSendNotification) {
-      console.log(`Sending notification from ${sender?.username || 'Unknown'} to ${receiver.username}`);
+     console.log(`Sending notification from ${sender?.username || 'Unknown'} to ${receiver.username}`);
       
       try {
         await sendNotification(
@@ -226,36 +226,42 @@ router.get('/chat-history/:userId', async (req, res) => {
   
 
    // to get unread message 
-   router.get('/unread-count/:userId', async (req, res) => {
-    const { userId } = req.params;
-  
-    try {
-      const count = await Message.countDocuments({
-        receiverId: userId,
-        isRead: false,
-      });
-  
-      res.status(200).json({ unreadCount: count });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch unread message count' });
-    }
-  });
-// to make chat read when open 
-router.post('/mark-as-read', async (req, res) => {
-  const { senderId, receiverId } = req.body;
-
+  router.get('/messages/unread-count/:userId/:peerId', async (req, res) => {
   try {
-    await Message.updateMany(
-      { senderId, receiverId, isRead: false },
-      { $set: { isRead: true } }
-    );
-
-    res.status(200).json({ message: 'Messages marked as read' });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update messages' });
+    console.log("Received request to get unread count");
+    
+    const count = await Message.countDocuments({
+      senderId: req.params.peerId,
+      receiverId: req.params.userId,
+      isRead: false
+    });
+    res.json({ count });
+    console.log("Sent response with count:", count);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
+router.post('/messages/mark-as-read', async (req, res) => {
+  // console.log('Received POST request to /mark-as-read');
+  // console.log('Request body:', req.body); // Add this line
+  
+  const { senderId, receiverId } = req.body;
+  //console.log(`Params: senderId=${senderId}, receiverId=${receiverId}`); // Add this line
+
+  try {
+    const result = await Message.updateMany(
+      { senderId, receiverId, isRead: false },
+      { $set: { isRead: true } }
+    );
+    
+    //console.log('Update result:', result); // Add this line
+    res.status(200).json({ message: 'Messages marked as read', updatedCount: result.modifiedCount });
+  } catch (error) {
+    //console.error('Error in /mark-as-read:', error); // Enhanced error logging
+    res.status(500).json({ error: 'Failed to update messages' });
+  }
+});
 
   
 
