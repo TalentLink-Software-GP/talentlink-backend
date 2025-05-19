@@ -23,6 +23,7 @@ router.post('/messages', async (req, res) => {
       User.findById(receiverId).lean(),
       User.findById(senderId).lean()
     ]);
+    // const reciverToken=receiver.fcmTokens;
 
     if (!receiver) {
       console.error("❌ Error: Receiver not found");
@@ -41,18 +42,23 @@ router.post('/messages', async (req, res) => {
      console.log(`Sending notification from ${sender?.username || 'Unknown'} to ${receiver.username}`);
       
       try {
-        await sendNotification(
-          receiver.fcmTokens,
-          'New Message',
-          `${sender?.username || 'Someone'}: ${message}`,
-          { 
-            type: 'chat', 
-            senderId,
-            receiverId, 
-            messageId: newMessage._id.toString(),
-            route: '/chat'
-          }
-        );
+       await sendNotification(
+  receiver.fcmTokens,
+  'New Message',
+  `${sender?.username || 'Someone'}: ${message}`,
+  {
+    type: 'chat',
+    senderId,
+    receiverId,
+    messageId: newMessage._id.toString(),
+    peerUserId: senderId,
+    peerUsername: sender?.username || 'Unknown',
+    currentUserId: receiverId,
+    currentuserAvatarUrl: sender?.avatarUrl || '',
+    //token: reciverToken, // Replace with actual token if available
+    route: '/chat'
+  }
+);
       } catch (err) {
         console.error("❌ Error sending notification:", err);
       }

@@ -47,7 +47,7 @@ if (!organizationId || !isValidObjectId) {
 
         const notification = new orgNotification({
                     
-                    title: `New Job: ${jobTitle}`,
+                    title: `New Applied: ${jobTitle}`,
                     body: `Applied by ${req.user.name}`,
                     companyId: organizationId,
                     jobId: jobId,
