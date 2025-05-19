@@ -28,7 +28,7 @@ async function sendNotification(tokens, title, body, data) {
     }
   }
 }
-async function sendJobNotification(tokens, title, company) {
+async function sendJobNotification(tokens, title, company,jobId) {
   tokens = tokens.flat().filter((token) => typeof token === 'string' && token.length > 0);
 
   if (tokens.length === 0) {
@@ -39,7 +39,12 @@ async function sendJobNotification(tokens, title, company) {
   for (const token of tokens) {
     const message = {
       notification: { title, body: `New job from ${company}` },
-      data: { title, company },
+     data: { 
+        type: 'job', 
+        title: String(title), 
+        company: String(company), 
+        jobId: String(jobId)  // Convert jobId to a string
+      },
       token: token,  
     };
 

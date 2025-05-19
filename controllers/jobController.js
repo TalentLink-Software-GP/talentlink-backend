@@ -232,7 +232,7 @@ const addJob = async (req,res) => {
         await notification.save();
 
         // Send job notification
-        sendJobNotification(tokens, title, organaization.name);
+        sendJobNotification(tokens, title, organaization.name,newJob._id);
 
 ///////////////////////////////
           
