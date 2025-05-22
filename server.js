@@ -21,6 +21,7 @@ const setupSwagger = require("./swagger");
 
 const User = require('./models/User');
 const { sendNotification } = require('./services/firebaseAdmin');
+const meetings= require('./routes/meetingsRoutes');
 
 dotenv.config();
 const app = express();
@@ -47,6 +48,7 @@ app.use("/api/location", locationRoutes);
 app.use("/api/applications", applications);
 app.use("/api/jobMatch", jobMatch);
 app.use("/api/notifications", notifications);
+app.use("/api/meetings", meetings);
 
 // Swagger Docs
 setupSwagger(app);
@@ -112,16 +114,19 @@ presenceNamespace.on("connection", (socket) => {
 });
 
 // --- Chat Namespace ---
+// const chatNamespace = io.of('/chat');
+
 const chatNamespace = io.of('/chat');
-
 chatNamespace.on("connection", (socket) => {
-  //console.log("[Chat] Connected:", socket.id);
+  console.log("[Chat] Connected:", socket.id);
   let userId = null;
-
+  
   socket.on("register", (id) => {
     userId = id;
     activeConnections.set(userId, { socketId: socket.id, lastActive: Date.now() });
+    socket.join(userId); // Join a room with the user's ID
     socket.emit("registrationSuccess", { userId });
+    console.log(`[Chat] User ${userId} registered with socket ${socket.id}`);
   });
 
   socket.on("registerFCMToken", async ({ userId, fcmToken }) => {
@@ -140,19 +145,22 @@ chatNamespace.on("connection", (socket) => {
       if (!data.senderId || !data.receiverId || !data.message) {
         throw new Error("Missing fields in message");
       }
-
+      
       data.timestamp = data.timestamp || new Date().toISOString();
-
-      const recipientSocketId = activeConnections.get(data.receiverId)?.socketId;
-
-      if (recipientSocketId) {
-        chatNamespace.to(recipientSocketId).emit("receiveMessage", data);
-        console.log(`[Chat] Sent message to ${data.receiverId}`);
-      }
-
+      console.log(`[Chat] Message from ${data.senderId} to ${data.receiverId}: ${data.message}`);
+      
+      // Send to the specific room (user)
+      socket.to(data.receiverId).emit("receiveMessage", data);
+      
+      // Also send back to sender to confirm delivery
+      socket.emit("messageDelivered", {
+        messageId: data.messageId || Date.now().toString(),
+        timestamp: data.timestamp
+      });
+      
       const recipient = await User.findById(data.receiverId).select('fcmTokens notificationSettings').lean();
       const sender = await User.findById(data.senderId).select('username').lean();
-
+      
       if (recipient?.fcmTokens?.length > 0 &&
           (!recipient.notificationSettings || recipient.notificationSettings.chat !== false)) {
         await sendNotification(recipient.fcmTokens, {
@@ -162,7 +170,6 @@ chatNamespace.on("connection", (socket) => {
         });
         console.log(`[Chat] Push notification sent to ${data.receiverId}`);
       }
-
     } catch (err) {
       console.error("[Chat] sendMessage Error:", err);
       socket.emit("messageError", { error: err.message });
@@ -171,10 +178,11 @@ chatNamespace.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("[Chat] Disconnected:", socket.id);
-    if (userId) activeConnections.delete(userId);
+    if (userId) {
+      activeConnections.delete(userId);
+    }
   });
 });
-
 // --- Call Namespace ---
 const callNamespace = io.of('/calls');
 

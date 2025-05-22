@@ -5,7 +5,7 @@ const{
     deleteAvatar,
     uploadCV,
     deleteCV,
-    userByUsername,
+    userByUsername,getUserCv,
 } = require("../controllers/userController")
 const upload = require("../middleware/multer");
 
@@ -273,6 +273,7 @@ router.post('/cleanup-fcm-tokens', async (req, res) => {
     res.status(500).json({ error: 'Failed to clean tokens' });
   }
 });
+router.get('/getUserCV/:userId',getUserCv);
 
 
 

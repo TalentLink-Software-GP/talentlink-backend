@@ -32,8 +32,9 @@ if (!organizationId || !isValidObjectId) {
   const username = organization?.username;
 
       const application = new Application({
-        userId: req.user.id,
+  userId: new mongoose.Types.ObjectId(req.user.id),
         userName: req.user.name,  
+        username: req.user.username,
         jobId,
         jobTitle,
         matchScore,
@@ -84,7 +85,7 @@ if (!organizationId || !isValidObjectId) {
       
       const applications = await Application.find({ organizationId: req.user.id })
     .sort({ appliedDate: -1 })
-    .populate('userId', 'name')      
+.populate('userId', 'name _id username')
     .populate('jobId', 'title');     
   
   res.json(applications.map(app => ({
@@ -94,6 +95,9 @@ if (!organizationId || !isValidObjectId) {
     status: app.status,
     appliedDate: app.appliedDate,
     matchScore: app.matchScore,
+userId: app.userId?._id|| '',
+username: app.userId?.username || '',
+
   })));
     } catch (error) {
       console.error(error);
