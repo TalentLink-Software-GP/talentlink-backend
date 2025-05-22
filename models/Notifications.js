@@ -44,10 +44,25 @@ const orgNotificationSchema = new mongoose.Schema({
 const orgNotification = mongoose.model('orgNotification', orgNotificationSchema);
 
 
+const meetingNotificationSchema=new mongoose.Schema({
+
+    title: { type: String, required: true },
+    body: { type: String, required: true },
+    read: { type: Boolean, default: false },
+    meetingId: { type: String,required: true},
+    applicantId: {  type: mongoose.Schema.Types.ObjectId,  ref: 'User', required: true},
+    scheduledDateTime: {type: Date,required: true},
+     organizationId: { type: mongoose.Schema.Types.ObjectId,  ref: 'Organization',  required: true },
+     orgName:{ type: String, required: false },
+     meetingLink: { type: String,required: true, },
+});
+const meetingNotification=mongoose.model('meetingNotification',meetingNotificationSchema);
 
 
 module.exports = {
     AllPrivateUserNotification,
-    GlobalNotification,orgNotification,
+    GlobalNotification,
+    orgNotification,
+    meetingNotification,
     
 };

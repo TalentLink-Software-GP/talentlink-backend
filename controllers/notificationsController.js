@@ -1,4 +1,4 @@
-const { AllPrivateUserNotification, GlobalNotification,orgNotification } = require("../models/Notifications");
+const { AllPrivateUserNotification, GlobalNotification,orgNotification,meetingNotification } = require("../models/Notifications");
 const User=require("../models/User");
 const Organaization=require("../models/Organization");
 
@@ -54,6 +54,21 @@ getPrivateNotificationsLikeCommentReply = async (req, res) => {
 
 
 
+const fetchMeetingNotifications = async (req, res) => {
+    try {
+      console.log("fetchMeetingNotifications Reached");
+        const userid = req.params.userid;
+        console.log(userid);
+        const notifications = await meetingNotification.find({
+            applicantId: userid,
+        })
+            .sort({ createdAt: -1 })
+            .select('_id title body  meetingId applicantId scheduledDateTime organizationId meetingLink read');
+        res.status(200).json(notifications);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching notifications' });
+    }
+};
 
 
 const markAsReadFunc = async (req, res) => {
@@ -75,6 +90,15 @@ const markAsReadFunc = async (req, res) => {
         { new: true }
       );
     }
+    if (!notification) {
+      notification = await meetingNotification.findByIdAndUpdate(
+        notificationId,
+        { read: true },
+        { new: true }
+      );
+    }
+
+
     
     // If notification still not found
     if (!notification) {
@@ -109,6 +133,8 @@ const markAsReadFunc = async (req, res) => {
     });
   }
 };
+
+
 module.exports = {
-    getGlobalJobNotification,getPrivateNotificationsLikeCommentReply,markAsReadFunc,getAppliedJob,
+    getGlobalJobNotification,getPrivateNotificationsLikeCommentReply,markAsReadFunc,getAppliedJob,fetchMeetingNotifications,
 };

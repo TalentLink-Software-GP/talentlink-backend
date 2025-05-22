@@ -3,7 +3,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 const {
-    getGlobalJobNotification,getPrivateNotificationsLikeCommentReply,markAsReadFunc,getAppliedJob,
+    getGlobalJobNotification,getPrivateNotificationsLikeCommentReply,markAsReadFunc,getAppliedJob,fetchMeetingNotifications
 
 }=require("../controllers/notificationsController");
 
@@ -13,6 +13,8 @@ router.get("/getPrivateNotificationsLikeCommentReply/:username", getPrivateNotif
 router.get("/getAppliedJob/:username",getAppliedJob);
 
 router.patch('/markAsRead/:notificationId', markAsReadFunc);
+
+router.get('/getMeetingNotification/:userid', fetchMeetingNotifications);
 
 
 module.exports = router;
