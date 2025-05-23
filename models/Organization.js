@@ -18,6 +18,7 @@ const organizationSchema = new mongoose.Schema({
       default: "Organization" 
     },
     avatarUrl: { type: String, required: false},
+     fcmTokens: { type: [String], default: [] }, 
 
     createdAt: { type: Date, default: Date.now },
   });

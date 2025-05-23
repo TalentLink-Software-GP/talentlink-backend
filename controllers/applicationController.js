@@ -2,30 +2,27 @@ const Application = require('../models/Application');
 const mongoose = require("mongoose");
 const { UserNotification, GlobalNotification,orgNotification } = require("../models/Notifications");
 const Organization = require("../models/Organization");
+const { sendApplicantNotification } = require('../services/firebaseAdmin');
 
-const applicationData=async (req, res) => {
+   const applicationData=async (req, res) => {
 
     try {
       const { jobId, jobTitle, matchScore, organizationId,  } = req.body;
       
       if (!req.user || !req.user.id || !req.user.name) {
-// const userId=req.user.id;
-       
-
-
         return res.status(400).json({ 
           message: 'User information missing.'
         });
       }
 
-      
       const isValidObjectId = mongoose.Types.ObjectId.isValid(organizationId);
-if (!organizationId || !isValidObjectId) {
+      if (!organizationId || !isValidObjectId) {
 
   
   return res.status(400).json({
     message: 'Invalid organizationId.',
   });
+
 }
 
   const organization = await Organization.findById(organizationId);
@@ -57,7 +54,22 @@ if (!organizationId || !isValidObjectId) {
                 });
                 await notification.save();
         
-                // Send job notification
+const orgTokens = organization?.fcmTokens;
+
+if (orgTokens && orgTokens.length > 0) {
+  await sendApplicantNotification(
+    orgTokens,
+    {
+      jobId: String(jobId),
+      jobTitle: String(jobTitle),
+      applicantName: String(req.user.name),
+      applicantUsername: String(req.user.username),
+      organizationId: String(organizationId)
+    }
+  );
+} else {
+  console.warn(` No FCM tokens found for organization ${username}`);
+}
 
                 
       res.status(201).json(savedApplication);
