@@ -5,13 +5,13 @@ const{
     deleteAvatar,
     uploadCV,
     deleteCV,
-    userByUsername,getUserCv,
+    userByUsername,getUserCv,getUserId,getCurrentUser,getUserStatus,saveFcmToken,removeFcmToken,
 } = require("../controllers/userController")
 const upload = require("../middleware/multer");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
-const User = require("../models/User");  
+ 
 
 
 /**
@@ -173,104 +173,22 @@ router.delete("/remove-cv", authMiddleware, deleteCV);
 router.get("/byusername/:username", userByUsername);
 
 
-
-router.get("/get-user-id", authMiddleware, async (req, res) => {
-  console.log("AWWADX");
-
-  try {
-
-    const user = await User.findById(req.user.id);
-    console.log(user);
-
-    console.log("Decoded token email:", req.user.email);
-
-    
-    console.log("Fetched user:", user); 
-
-    if (!user) return res.status(404).json({ msg: "User not found" });
-
-    res.json({ userId: user._id, username: user.username,avatarUrl: user.avatarUrl, });
-  } catch (err) {
-    console.error("Error in /get-user-id route:", err); 
-    res.status(500).json({ msg: "Server error" });
-  }
-});
-router.get('/get-current-user', authMiddleware, async (req, res) => {
-  try {
-    console.log('Current User:', req.user);  
-
-    res.status(200).json({
-      name: req.user.username,
-      avatarUrl: req.user.avatarUrl || '',  
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to fetch current user' });
-  }
-});
+router.get("/get-user-id", authMiddleware,getUserId);
 
 
-router.get('/:userId/status', async (req, res) => {
-  console.log("Received request for user status");
-  try {
-    const user = await User.findById(req.params.userId, 'online lastSeen');
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    
-    res.json({ 
-      online: user.online, 
-      lastSeen: user.lastSeen 
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
 
-router.post('/save-fcm-token', async (req, res) => {
-  
-  const { userId, fcmToken } = req.body;
+router.get('/get-current-user', authMiddleware,getCurrentUser);
 
-  try {
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { 
-        $addToSet: { fcmTokens: fcmToken }, 
-        $set: { updatedAt: new Date() } 
-      },
-      { new: true }
-    );
 
-    console.log(`FCM Token registered for user ${userId}: ${fcmToken}`);
-    res.status(200).json({ success: true });
-  } catch (error) {
-    console.error('Error saving FCM token:', error);
-    res.status(500).json({ error: 'Failed to save FCM token' });
-  }
-});
-router.post('/remove-fcm-token', async (req, res) => {
-  const { id, fcmToken } = req.body;
-  
-  if (!id || !fcmToken) {
-    return res.status(400).json({ error: 'User ID and FCM token are required' });
-  }
-  
-  try {
-    const user = await User.findByIdAndUpdate(
-      id,
-      { $pull: { fcmTokens: fcmToken } },
-      { new: true }
-    );
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    console.log(`FCM Token removed for user ${id}: ${fcmToken}`);
-    res.status(200).json({ success: true });
-  } catch (error) {
-    console.error('Error removing FCM token:', error);
-    res.status(500).json({ error: 'Failed to remove FCM token' });
-  }
-});
+
+router.get('/:userId/status',getUserStatus);
+
+
+router.post('/save-fcm-token', saveFcmToken);
+
+
+router.post('/remove-fcm-token',removeFcmToken);
+
 
 
 router.get('/getUserCV/:userId',getUserCv);

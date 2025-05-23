@@ -107,4 +107,64 @@ const deleteAvatar = async (req,res) => {
     }
 }
 
-module.exports = {getProfileData,updateAvatar,deleteAvatar,getOrgDataWithuserName}
+const saveFcmToken= async (req, res) => {
+ 
+  await Organization.updateMany(
+  { fcmTokens: { $exists: false } },
+  { $set: { fcmTokens: [] } }
+);
+  const { organizationId, fcmToken } = req.body;
+
+  if (!organizationId || !fcmToken) {
+    return res.status(400).json({ error: 'organizationId and fcmToken are required.' });
+  }
+
+  try {
+    const updatedOrg = await Organization.findByIdAndUpdate(
+      organizationId,
+      {
+        $addToSet: { fcmTokens: fcmToken },
+        $set: { updatedAt: new Date() }
+      },
+      { new: true }
+    );
+
+    if (!updatedOrg) {
+      return res.status(404).json({ error: 'Organization not found.' });
+    }
+
+    console.log(`✅ FCM Token saved for organization ${organizationId}: ${fcmToken}`);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('❌ Error saving FCM token for organization:', error);
+    res.status(500).json({ error: 'Failed to save FCM token for organization' });
+  }
+};
+
+const removeFcmToken= async (req, res) => {
+  const { id, fcmToken } = req.body;
+  
+  if (!id || !fcmToken) {
+    return res.status(400).json({ error: 'Organization ID and FCM token  required' });
+  }
+  
+  try {
+    const organization = await Organization.findByIdAndUpdate(
+      id,
+      { $pull: { fcmTokens: fcmToken } },
+      { new: true }
+    );
+    
+    if (!organization) {
+      return res.status(404).json({ error: 'Organization not found' });
+    }
+    
+    console.log(`FCM Token removed for organization ${id}: ${fcmToken}`);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Error removing FCM token:', error);
+    res.status(500).json({ error: 'Failed to remove FCM token' });
+  }
+};
+
+module.exports = {getProfileData,updateAvatar,deleteAvatar,getOrgDataWithuserName ,saveFcmToken,removeFcmToken,}
