@@ -5,6 +5,8 @@ const { Readable } = require('stream');
 const openai = require("../utils/openaiClient");
 const Skills = require('../models/Skills');
 const Organization = require("../models/Organization");
+const User = require("../models/User"); 
+
 
 const getUserData = async (req,res) => {
     try{
@@ -285,4 +287,117 @@ const getUserCv = async (req, res) => {
   }
 };
 
-module.exports = {getUserData, updateAvatar, deleteAvatar, uploadCV, deleteCV,userByUsername,getUserCv}
+
+const getUserId= async (req, res) => {
+  console.log("AWWADX");
+
+  try {
+
+    const user = await User.findById(req.user.id);
+    console.log(user);
+
+    console.log("Decoded token email:", req.user.email);
+
+    
+    console.log("Fetched user:", user); 
+
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    res.json({ userId: user._id, username: user.username,avatarUrl: user.avatarUrl, });
+  } catch (err) {
+    console.error("Error in /get-user-id route:", err); 
+    res.status(500).json({ msg: "Server error" });
+  }
+};
+
+const getCurrentUser=async (req, res) => {
+  try {
+    console.log('Current User:', req.user);  
+
+    res.status(200).json({
+      name: req.user.username,
+      avatarUrl: req.user.avatarUrl || '',  
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch current user' });
+  }
+};
+const getUserStatus=async (req, res) => {
+  console.log("Received request for user status");
+  try {
+    const user = await User.findById(req.params.userId, 'online lastSeen');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    res.json({ 
+      online: user.online, 
+      lastSeen: user.lastSeen 
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+const saveFcmToken= async (req, res) => {
+  
+  const { userId, fcmToken } = req.body;
+
+  try {
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { 
+        $addToSet: { fcmTokens: fcmToken }, 
+        $set: { updatedAt: new Date() } 
+      },
+      { new: true }
+    );
+
+    console.log(`FCM Token registered for user ${userId}: ${fcmToken}`);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Error saving FCM token:', error);
+    res.status(500).json({ error: 'Failed to save FCM token' });
+  }
+};
+
+const removeFcmToken= 
+async (req, res) => {
+  const { id, fcmToken } = req.body;
+  
+  if (!id || !fcmToken) {
+    return res.status(400).json({ error: 'User ID and FCM token are required' });
+  }
+  
+  try {
+    const user = await User.findByIdAndUpdate(
+      id,
+      { $pull: { fcmTokens: fcmToken } },
+      { new: true }
+    );
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    console.log(`FCM Token removed for user ${id}: ${fcmToken}`);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Error removing FCM token:', error);
+    res.status(500).json({ error: 'Failed to remove FCM token' });
+  }
+};
+
+
+module.exports = {
+  getUserData,
+   updateAvatar, 
+   deleteAvatar,
+    uploadCV,
+     deleteCV,
+     userByUsername,
+     getUserCv,
+     getUserId,
+     getCurrentUser,
+    getUserStatus,
+    saveFcmToken,
+    removeFcmToken,
+    }
