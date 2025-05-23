@@ -1,16 +1,13 @@
 const multer = require("multer");
-const path = require("path");
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    const uniqueName = `${Date.now()}-${file.originalname}`;
-    cb(null, uniqueName);
-  },
+// Use memory storage instead of disk storage since files are immediately uploaded to GCS
+const storage = multer.memoryStorage();
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  }
 });
-
-const upload = multer({ storage: storage });
 
 module.exports = upload;

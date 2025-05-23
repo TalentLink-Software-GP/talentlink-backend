@@ -336,30 +336,107 @@ const smartAddJob = async (req, res) => {
 
     // Create prompt for AI
     const prompt = `
-Given the following job description text, extract a complete JSON object that fits this job model:
-{
-  title: string,
-  description: string,
-  location: string,
-  salary: string,
-  jobType: one of ["Full-Time", "Part-Time", "Remote", "Internship", "Contract"],
-  category: string,
-  deadline: string (ISO date),
-  requirements: string[],
-  responsibilities: string[]
-}
-Only return JSON.
----
+Extract job information from the following text and return ONLY a valid JSON object. Do not include any explanatory text, comments, or markdown formatting. Return only the raw JSON.
 
+Required JSON structure:
+{
+  "title": "string",
+  "description": "string",
+  "location": "string",
+  "salary": "string",
+  "jobType": "Full-Time",
+  "category": "string",
+  "deadline": "2024-12-31T23:59:59.000Z",
+  "requirements": ["requirement1", "requirement2"],
+  "responsibilities": ["responsibility1", "responsibility2"]
+}
+
+Rules:
+- jobType must be one of: "Full-Time", "Part-Time", "Remote", "Internship", "Contract"
+- deadline must be a valid ISO date string
+- If information is missing, make reasonable assumptions
+- Return ONLY valid JSON, no other text
+
+Job description text:
 ${extractedText}
 `;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        { 
+          role: "system", 
+          content: "You are a JSON extraction tool. You must return only valid JSON objects with no additional text, explanations, or formatting." 
+        },
+        { 
+          role: "user", 
+          content: prompt 
+        }
+      ],
+      temperature: 0.1,
     });
 
-    const jobData = JSON.parse(completion.choices[0].message.content);
+    let responseContent = completion.choices[0].message.content.trim();
+    
+    // Try to extract JSON if the response contains extra text
+    let jobData;
+    try {
+      // First try direct parsing
+      jobData = JSON.parse(responseContent);
+    } catch (firstError) {
+      try {
+        // Try to find JSON within the response
+        const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          jobData = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error("No JSON object found in response");
+        }
+      } catch (secondError) {
+        console.error("❌ Failed to parse AI response:", responseContent);
+        return res.status(500).json({ 
+          message: "AI returned invalid response format", 
+          error: "Could not extract valid job data from AI response" 
+        });
+      }
+    }
+
+    // Validate required fields
+    const requiredFields = ['title', 'description', 'location', 'salary', 'jobType', 'category'];
+    const missingFields = requiredFields.filter(field => !jobData[field]);
+    
+    if (missingFields.length > 0) {
+      return res.status(400).json({ 
+        message: "AI extraction incomplete", 
+        error: `Missing required fields: ${missingFields.join(', ')}` 
+      });
+    }
+
+    // Validate jobType
+    const validJobTypes = ["Full-Time", "Part-Time", "Remote", "Internship", "Contract"];
+    if (!validJobTypes.includes(jobData.jobType)) {
+      jobData.jobType = "Full-Time"; // Default fallback
+    }
+
+    // Ensure arrays exist
+    if (!Array.isArray(jobData.requirements)) {
+      jobData.requirements = [];
+    }
+    if (!Array.isArray(jobData.responsibilities)) {
+      jobData.responsibilities = [];
+    }
+
+    // Validate/fix deadline
+    if (jobData.deadline) {
+      const deadlineDate = new Date(jobData.deadline);
+      if (isNaN(deadlineDate.getTime())) {
+        // If invalid date, set to 30 days from now
+        jobData.deadline = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      }
+    } else {
+      // Set default deadline to 30 days from now
+      jobData.deadline = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    }
 
     const newJob = new Job({ ...jobData, companyId: organaizationId });
     await newJob.save();

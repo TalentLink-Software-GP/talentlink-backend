@@ -1,4 +1,4 @@
- const express = require("express");
+const express = require("express");
 const { register, login, verifyEmail, emailFornewPassword, verifyResetCode, setNewPassword,isverifyd } = require("../controllers/authController");
 const router = express.Router();
 
@@ -11,57 +11,103 @@ const router = express.Router();
  *       required:
  *         - name
  *         - username
- *         - email
  *         - phone
  *         - password
- *         - isVerified
+ *         - date
+ *         - country
+ *         - city
+ *         - gender
  *       properties:
  *         name:
  *           type: string
  *           description: Full name of the user
  *         username:
  *           type: string
- *           description: Unique username
- *         email:
- *           type: string
- *           description: User's email address
+ *           description: Unique username (will be used to generate email as username@talent.ps)
  *         phone:
  *           type: string
  *           description: User's phone number
  *         password:
  *           type: string
- *           description: User's hashed password
- *         isVerified:
- *           type: boolean
- *           description: Indicates if the user has verified their email
- *         resetCode:
+ *           description: User's password
+ *         date:
  *           type: string
- *           description: Code used for password reset
+ *           format: date
+ *           description: Birth date or registration date
+ *         country:
+ *           type: string
+ *           description: User's country
+ *         city:
+ *           type: string
+ *           description: User's city
+ *         gender:
+ *           type: string
+ *           description: User's gender
  *         role:
  *           type: string
  *           enum: [admin, Organization, Freelancer, Job Seeker]
  *           description: Role of the user
- *         date:
+ *         email:
  *           type: string
- *           format: date
- *           description: Optional birth date or registration date
- *         country:
- *           type: string
- *         city:
- *           type: string
- *         gender:
- *           type: string
+ *           description: Automatically generated as username@talent.ps for admin users
+ *         isVerified:
+ *           type: boolean
+ *           description: Automatically set to true for admin users
  *         avatarUrl:
  *           type: string
  *           format: uri
+ *           description: Optional avatar URL
  *         cvUrl:
  *           type: string
  *           format: uri
+ *           description: Optional CV URL
  *         createdAt:
  *           type: string
  *           format: date-time
  *           description: Account creation timestamp
- *
+ *     AdminResponse:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           example: Admin user created successfully
+ *         token:
+ *           type: string
+ *           description: JWT token for authentication
+ *         user:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: string
+ *               description: User's unique identifier
+ *             name:
+ *               type: string
+ *               description: User's full name
+ *             username:
+ *               type: string
+ *               description: User's username
+ *             email:
+ *               type: string
+ *               description: User's email (username@talent.ps)
+ *             role:
+ *               type: string
+ *               example: admin
+ *             phone:
+ *               type: string
+ *               description: User's phone number
+ *             date:
+ *               type: string
+ *               format: date
+ *             country:
+ *               type: string
+ *             city:
+ *               type: string
+ *             gender:
+ *               type: string
+ */
+
+/**
+ * @swagger
  * /api/auth/register:
  *   post:
  *     summary: Register a new user
@@ -71,12 +117,58 @@ const router = express.Router();
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/User'
+ *             type: object
+ *             required:
+ *               - role
+ *             properties:
+ *               role:
+ *                 type: string
+ *                 enum: [Admin, Organization, Freelancer, Job Seeker]
+ *                 description: Role of the user to register
+ *               name:
+ *                 type: string
+ *                 description: Full name of the user
+ *               username:
+ *                 type: string
+ *                 description: Unique username (for admin, will be used to generate email)
+ *               phone:
+ *                 type: string
+ *                 description: User's phone number
+ *               password:
+ *                 type: string
+ *                 description: User's password
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 description: Birth date or registration date
+ *               country:
+ *                 type: string
+ *                 description: User's country
+ *               city:
+ *                 type: string
+ *                 description: User's city
+ *               gender:
+ *                 type: string
+ *                 description: User's gender
  *     responses:
  *       201:
- *         description: User registered successfully, email verification required
+ *         description: User registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - $ref: '#/components/schemas/AdminResponse'
+ *                 - type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: User registered. Please verify your email.
+ *                     token:
+ *                       type: string
  *       400:
  *         description: User already exists or invalid input
+ *       500:
+ *         description: Server error
  */
 router.post("/register", register);
 

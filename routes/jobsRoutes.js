@@ -53,7 +53,7 @@ const { getOrgJobs, getAllJobs, addJob, deleteJob, updateJob, smartAddJob,getAll
  *     summary: Get all jobs for a specific organization
  *     tags: [Jobs]
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of jobs for the organization
@@ -86,7 +86,7 @@ router.get('/job/:jobId',getJobById);
  *     summary: Add a new job to the organization
  *     tags: [Jobs]
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -119,6 +119,16 @@ router.get('/job/:jobId',getJobById);
  *     responses:
  *       201:
  *         description: Job created successfully
+ *       401:
+ *         description: Unauthorized - Authentication token required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Access Denied. No token provided.
  *       404:
  *         description: Organization not found
  *       500:
@@ -133,7 +143,7 @@ router.post("/addjob", authMiddleware, addJob);
  *     summary: Delete a job by ID
  *     tags: [Jobs]
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: jobId
@@ -144,6 +154,16 @@ router.post("/addjob", authMiddleware, addJob);
  *         description: Job deleted successfully
  *       400:
  *         description: Job ID is required
+ *       401:
+ *         description: Unauthorized - Authentication token required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Access Denied. No token provided.
  *       404:
  *         description: Job not found or unauthorized
  */
@@ -156,7 +176,7 @@ router.delete("/deletejob", authMiddleware, deleteJob);
  *     summary: Update job details
  *     tags: [Jobs]
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: jobId
@@ -194,6 +214,16 @@ router.delete("/deletejob", authMiddleware, deleteJob);
  *     responses:
  *       200:
  *         description: Job updated successfully
+ *       401:
+ *         description: Unauthorized - Authentication token required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Access Denied. No token provided.
  *       404:
  *         description: Job not found or unauthorized
  */
@@ -201,12 +231,12 @@ router.patch("/updatejob", authMiddleware, updateJob);
 
 /**
  * @swagger
- * /api/job//smart-add-job:
+ * /api/job/smart-add-job:
  *   post:
  *     summary: Add a job via AI-powered extraction from a file or text
  *     tags: [Jobs]
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -217,15 +247,53 @@ router.patch("/updatejob", authMiddleware, updateJob);
  *               file:
  *                 type: string
  *                 format: binary
+ *                 description: PDF, DOC, or TXT file containing job description
  *               text:
  *                 type: string
+ *                 description: Optional text input for job description
  *     responses:
  *       201:
  *         description: Job created successfully via AI
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Job created successfully
+ *                 job:
+ *                   $ref: '#/components/schemas/Job'
  *       400:
  *         description: Invalid file or unsupported format
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Invalid file format or missing required data
+ *       401:
+ *         description: Unauthorized - Authentication token required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Access Denied. No token provided.
  *       500:
- *         description: Error processing the job
+ *         description: Server error while processing the job
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Error processing the job
  */
 router.post("/smart-add-job", authMiddleware, uploadMiddleware.single('file'), smartAddJob);
 
@@ -251,7 +319,15 @@ router.post("/smart-add-job", authMiddleware, uploadMiddleware.single('file'), s
  *       204:
  *         description: No jobs available
  *       401:
- *         description: Unauthorized - User not authenticated
+ *         description: Unauthorized - Authentication token required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Access Denied. No token provided.
  *       500:
  *         description: Server error while fetching jobs
  */
