@@ -226,8 +226,6 @@ router.get('/:userId/status', async (req, res) => {
 });
 
 router.post('/save-fcm-token', async (req, res) => {
-  console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
-  
   
   const { userId, fcmToken } = req.body;
 
@@ -248,34 +246,33 @@ router.post('/save-fcm-token', async (req, res) => {
     res.status(500).json({ error: 'Failed to save FCM token' });
   }
 });
-
-
-//for admin
-router.post('/cleanup-fcm-tokens', async (req, res) => {
+router.post('/remove-fcm-token', async (req, res) => {
+  const { id, fcmToken } = req.body;
+  
+  if (!id || !fcmToken) {
+    return res.status(400).json({ error: 'User ID and FCM token are required' });
+  }
+  
   try {
-    const users = await User.find({ fcmTokens: { $exists: true, $ne: [] } });
+    const user = await User.findByIdAndUpdate(
+      id,
+      { $pull: { fcmTokens: fcmToken } },
+      { new: true }
+    );
     
-    for (const user of users) {
-      const validTokens = [];
-      
-      for (const token of user.fcmTokens) {
-        if (typeof token === 'string' && token.length > 0) {
-          validTokens.push(token);
-        }
-      }
-      
-      if (validTokens.length !== user.fcmTokens.length) {
-        await User.findByIdAndUpdate(user._id, { fcmTokens: validTokens });
-        console.log(`Cleaned tokens for user ${user._id}`);
-      }
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
     
-    res.status(200).json({ success: true, cleaned: users.length });
+    console.log(`FCM Token removed for user ${id}: ${fcmToken}`);
+    res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Error cleaning tokens:', error);
-    res.status(500).json({ error: 'Failed to clean tokens' });
+    console.error('Error removing FCM token:', error);
+    res.status(500).json({ error: 'Failed to remove FCM token' });
   }
 });
+
+
 router.get('/getUserCV/:userId',getUserCv);
 
 
