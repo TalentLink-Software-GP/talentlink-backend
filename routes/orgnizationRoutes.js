@@ -61,4 +61,30 @@ router.post('/save-fcm-token', async (req, res) => {
     res.status(500).json({ error: 'Failed to save FCM token for organization' });
   }
 });
+
+router.post('/remove-fcm-token', async (req, res) => {
+  const { id, fcmToken } = req.body;
+  
+  if (!id || !fcmToken) {
+    return res.status(400).json({ error: 'Organization ID and FCM token  required' });
+  }
+  
+  try {
+    const organization = await Organization.findByIdAndUpdate(
+      id,
+      { $pull: { fcmTokens: fcmToken } },
+      { new: true }
+    );
+    
+    if (!organization) {
+      return res.status(404).json({ error: 'Organization not found' });
+    }
+    
+    console.log(`FCM Token removed for organization ${id}: ${fcmToken}`);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Error removing FCM token:', error);
+    res.status(500).json({ error: 'Failed to remove FCM token' });
+  }
+});
 module.exports = router;
