@@ -11,6 +11,81 @@ const PORT = process.env.PORT || 5000;
 const register = async (req, res) => {
   try {
     const {role} = req.body;
+    if(role === "Admin"){
+      const { name, username, phone, password, date, country, city, gender } = req.body;
+      
+      // Validate required fields
+      if (!name || !username || !phone || !password || !date || !country || !city || !gender) {
+        return res.status(400).json({ error: "All fields are required" });
+      }
+
+      // Create email from username
+      const email = `${username}@talent.ps`;
+
+      // Check if user already exists
+      const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+      if (existingUser) {
+        return res.status(400).json({ error: "User already exists" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create admin user with all required fields
+      const admin = new User({
+        name,
+        username,
+        email,
+        phone,
+        password: hashedPassword,
+        role: "admin",
+        isVerified: true, // Admin is automatically verified
+        date,
+        country,
+        city,
+        gender,
+        online: false,
+        lastSeen: new Date(),
+        socketIds: [],
+        fcmTokens: [],
+        notificationSettings: {
+          chat: true,
+          calls: true
+        }
+      });
+
+      await admin.save();
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { 
+          id: admin._id, 
+          email: admin.email, 
+          role: admin.role,
+          username: admin.username,
+          name: admin.name
+        }, 
+        process.env.JWT_SECRET, 
+        { expiresIn: "35h" }
+      );
+
+      return res.status(201).json({
+        message: "Admin user created successfully",
+        token,
+        user: {
+          id: admin._id,
+          name: admin.name,
+          username: admin.username,
+          email: admin.email,
+          role: admin.role,
+          phone: admin.phone,
+          date: admin.date,
+          country: admin.country,
+          city: admin.city,
+          gender: admin.gender
+        }
+      });
+    }
     if(role === "Organization")
       {
         const { name, username,industry, websiteURL, country, address1, address2, email, password } = req.body;
@@ -295,6 +370,7 @@ const isverifyd = async (req, res) => {
     return res.status(500).json({ error: "Server error" });
   }
 };
+
 
 module.exports = {
   register,

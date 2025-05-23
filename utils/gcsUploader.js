@@ -1,7 +1,7 @@
 const { Storage } = require('@google-cloud/storage');
 const path = require('path');
 const crypto = require('crypto');
-const fs = require('fs');
+const { Readable } = require('stream');
 
 const storage = new Storage({
   keyFilename: path.join(__dirname, '../talentlink-456012-085abb34dcc0.json'),
@@ -23,13 +23,14 @@ const uploadToGCS = (file, folder = "avatars") => {
 
     blobStream.on('finish', () => {
       const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-      fs.unlinkSync(file.path);
       resolve(publicUrl);
     });
 
-    fs.createReadStream(file.path).pipe(blobStream);
+    const bufferStream = new Readable();
+    bufferStream.push(file.buffer);
+    bufferStream.push(null);
+    bufferStream.pipe(blobStream);
   });
 };
-
 
 module.exports = {uploadToGCS, bucket};
