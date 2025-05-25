@@ -21,6 +21,8 @@ const organizationSchema = new mongoose.Schema({
      fcmTokens: { type: [String], default: [] }, 
 
     createdAt: { type: Date, default: Date.now },
+        followers: [{ type: String }],
+following: [{ type: String }],
   });
   
   const Organization = mongoose.model('Organization', organizationSchema);

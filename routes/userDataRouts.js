@@ -6,6 +6,10 @@ const{
     uploadCV,
     deleteCV,
     userByUsername,getUserCv,getUserId,getCurrentUser,getUserStatus,saveFcmToken,removeFcmToken,
+    followingSys,
+checkFollowStatus,
+getUserFollowingStatus,
+fetchFollowList,
 } = require("../controllers/userController")
 const upload = require("../middleware/multer");
 
@@ -193,6 +197,13 @@ router.post('/remove-fcm-token',removeFcmToken);
 
 router.get('/getUserCV/:userId',getUserCv);
 
+router.get('/followingSys/:username/follow',authMiddleware,followingSys);
+router.get('/followingStatus/:username',authMiddleware,checkFollowStatus);
 
+
+
+router.get('/user-stats/:username', authMiddleware,getUserFollowingStatus);
+
+router.get('/follow-list/:username/:type', authMiddleware,fetchFollowList);
 
 module.exports = router;

@@ -29,8 +29,12 @@ const userSchema = new mongoose.Schema({
      fcmTokens: { type: [String], default: [] }, 
     notificationSettings: {
       chat: { type: Boolean, default: true },
-      calls: { type: Boolean, default: true }
-    }
+      calls: { type: Boolean, default: true },
+       
+   
+    },
+     followers: [{ type: String }],
+following: [{ type: String }],
   });
   
 const User = mongoose.model('User', userSchema);
