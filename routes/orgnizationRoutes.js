@@ -1,11 +1,14 @@
 const express = require("express")
 const Organization = require("../models/Organization");
 
+
 const {
   getProfileData,
   updateAvatar,
   deleteAvatar,
   getOrgDataWithuserName,saveFcmToken,removeFcmToken,
+  followingSys,
+  unfollowSys,
 } = require('../controllers/organizationController')
 
 const authMiddleware = require('../middleware/authMiddleware')
@@ -26,5 +29,8 @@ router.post('/save-fcm-token', saveFcmToken);
 
 
 router.post('/remove-fcm-token',removeFcmToken);
+
+router.get('/followingSys/:username/follow',authMiddleware,followingSys);
+
 
 module.exports = router;
