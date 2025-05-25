@@ -6,6 +6,8 @@ require("dotenv").config();
 const sendEmail = require("../utils/sendEmail");
 const crypto = require("crypto");
 const { Console } = require("console");
+require('dotenv').config();
+
 
 const PORT = process.env.PORT || 5000;
 const register = async (req, res) => {
@@ -121,7 +123,7 @@ const register = async (req, res) => {
 
           console.log(token);
 
-          const verificationUrl = `http://localhost:${PORT}/api/auth/verify-email/${token}`;
+          const verificationUrl = `${process.env.mainUrl}${token}`;
           await sendEmail(organaization.email, "Verify Your Email", `Click this link to verify: ${verificationUrl}`);
       
           res.status(201).json({
@@ -171,7 +173,8 @@ const register = async (req, res) => {
       { expiresIn: "35h" }
     );
 
-    const verificationUrl = `http://localhost:${PORT}/api/auth/verify-email/${token}`;
+    const verificationUrl = `${process.env.mainUrl}${token}`;
+
     await sendEmail(user.email, "Verify Your Email", `Click this link to verify: ${verificationUrl}`);
 
     res.status(201).json({
@@ -184,7 +187,6 @@ const register = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 const verifyEmail = async (req, res) => {
   const { token } = req.params;

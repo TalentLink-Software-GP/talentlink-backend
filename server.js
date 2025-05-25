@@ -19,6 +19,7 @@ const applications = require("./routes/applicationRoutes");
 const jobMatch = require("./routes/jobMatchRoutes");
 const notifications = require('./routes/notificationsRoutes');
 const setupSwagger = require("./swagger");
+const adminRoutes= require('./routes/adminRoutes');
 
 const User = require('./models/User');
 const { sendNotification } = require('./services/firebaseAdmin');
@@ -50,6 +51,7 @@ app.use("/api/applications", applications);
 app.use("/api/jobMatch", jobMatch);
 app.use("/api/notifications", notifications);
 app.use("/api/meetings", meetings);
+app.use("/api/admin", adminRoutes);
 
 // Swagger Docs
 setupSwagger(app);
