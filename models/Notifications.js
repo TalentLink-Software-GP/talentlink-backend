@@ -10,6 +10,7 @@ const userNotificationSchema = new mongoose.Schema({
     receiver: { type: String, required: true },
     postId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post' },
         jobId: { type: mongoose.Schema.Types.ObjectId, ref: 'Job' },
+       newfollowFrom:{ type: String, required: false },
 
 });
 
@@ -23,6 +24,8 @@ const globalNotificationSchema = new mongoose.Schema({
     jobId: { type: mongoose.Schema.Types.ObjectId, ref: 'Job' },
         read: { type: Boolean, default: false },
             postId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post' },
+                    newfollowFrom:{ type: String, required: false },
+
 
 
 });
