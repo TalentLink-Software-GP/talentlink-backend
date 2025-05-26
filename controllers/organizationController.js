@@ -171,55 +171,7 @@ const removeFcmToken= async (req, res) => {
 
 
 
-const followingSys= async (req, res) => {
- try {
-  console.log("Following system route hit");
-    // Try to find user to follow
-    let userToFollow = await User.findOne({ username: req.params.username });
-    
-    // If not found, try organization
-    if (!userToFollow) {
-      userToFollow = await Organization.findOne({ username: req.params.username });
-    }
-    
-    if (!userToFollow) {
-      return res.status(404).json({ message: 'User/Organization not found' });
-    }
 
-    const currentUser = await Organization.findOne({ username: req.user.username });
-    if (!currentUser) {
-      return res.status(404).json({ message: 'Current user not found' });
-    }
-
-   const isFollowing = userToFollow.followers.some(
-  username => username.toString() === currentUser.username.toString()
-);
-
-if (!isFollowing) {
-  userToFollow.followers.push(currentUser.username);
-  currentUser.following.push(userToFollow.username);
-}else {
-      userToFollow.followers = userToFollow.followers.filter(
-        u => u !== currentUser.username
-      );
-      currentUser.following = currentUser.following.filter(
-        u => u !== userToFollow.username
-      );
-    }
-
-    await userToFollow.save();
-    await currentUser.save();
-    
-    return res.status(200).json({ 
-      message: isFollowing ? 'Unfollowed successfully' : 'Followed successfully',
-      following: !isFollowing
-    });
-    
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-};
 
 module.exports = {
   getProfileData,
@@ -228,5 +180,6 @@ module.exports = {
   getOrgDataWithuserName,
   saveFcmToken,
   removeFcmToken,
-  followingSys,
+ 
+  
 }

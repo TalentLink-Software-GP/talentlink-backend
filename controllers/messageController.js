@@ -272,6 +272,42 @@ const deleteMessage= async (req, res) => {
     res.status(500).json({ error: 'Failed to update messages' });
   }
 };
+
+
+
+const messageCheckBetweenUsers = async (req, res) => {
+  console.log("Checking mutual follow status between users:", req.params.userId1, req.params.userId2);
+  try {
+    const user1 = await User.findOne({ _id: req.params.userId1 });
+    const user2 = await User.findOne({ _id: req.params.userId2 });
+
+    if (!user1 || !user2) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+   if (user1.username === user2.username) {
+  return res.status(200).json({
+    canMessage: true,
+    username: user1.username
+  });
+}
+    
+    const user1FollowsUser2 = user1.following.includes(user2.username.toString());
+    const user2FollowsUser1 = user2.following.includes(user1.username.toString());
+ 
+    console.log("User1 following:", user1.following);
+    console.log("User2 following:", user2.following);
+    console.log("Follow status:", { user1FollowsUser2, user2FollowsUser1 });
+    res.status(200).json({
+      canMessage: user1FollowsUser2 && user2FollowsUser1,
+      user1FollowsUser2,
+      user2FollowsUser1
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};
 module.exports = {
     saveMessage,
     messagebetweenUsers,
@@ -280,5 +316,6 @@ module.exports = {
     deleteMessage,
     getUnreadCount,
     markAsRead,
+    messageCheckBetweenUsers,
  
     }

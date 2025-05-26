@@ -7,8 +7,7 @@ const {
   updateAvatar,
   deleteAvatar,
   getOrgDataWithuserName,saveFcmToken,removeFcmToken,
-  followingSys,
-  unfollowSys,
+
 } = require('../controllers/organizationController')
 
 const authMiddleware = require('../middleware/authMiddleware')
@@ -30,7 +29,8 @@ router.post('/save-fcm-token', saveFcmToken);
 
 router.post('/remove-fcm-token',removeFcmToken);
 
-router.get('/followingSys/:username/follow',authMiddleware,followingSys);
 
+
+// all following system for Org made on User routes 
 
 module.exports = router;

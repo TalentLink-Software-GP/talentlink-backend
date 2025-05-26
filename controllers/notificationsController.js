@@ -43,7 +43,7 @@ getPrivateNotificationsLikeCommentReply = async (req, res) => {
             receiver: username,
         })
         .sort({ createdAt: -1 })
-        .select('_id title body timestamp postId senderId read');
+        .select('_id title body timestamp postId read sender ');
 
         res.status(200).json(privateNotifications);
     } catch (error) {
@@ -51,6 +51,27 @@ getPrivateNotificationsLikeCommentReply = async (req, res) => {
         res.status(500).json({ message: 'Error fetching notifications' });
     }
 };
+
+// const getPrivateFollowNotifications=  async (req, res) => {
+
+//    try {
+//         console.log("getPrivateNotificationsLikeCommentReply");
+//         const { username } = req.params;  
+//         console.log("Username:", username);
+
+//         const privateNotifications = await AllPrivateUserNotification.find({
+//             receiver: username,
+//         })
+//         .sort({ createdAt: -1 })
+//         .select('_id title body timestamp postId senderId read');
+
+//         res.status(200).json(privateNotifications);
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'Error fetching notifications' });
+//     }
+// };
+
 
 
 
@@ -136,5 +157,5 @@ const markAsReadFunc = async (req, res) => {
 
 
 module.exports = {
-    getGlobalJobNotification,getPrivateNotificationsLikeCommentReply,markAsReadFunc,getAppliedJob,fetchMeetingNotifications,
+    getGlobalJobNotification,getPrivateNotificationsLikeCommentReply,markAsReadFunc,getAppliedJob,fetchMeetingNotifications
 };

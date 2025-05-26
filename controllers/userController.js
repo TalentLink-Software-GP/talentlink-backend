@@ -6,6 +6,7 @@ const openai = require("../utils/openaiClient");
 const Skills = require('../models/Skills');
 const Organization = require("../models/Organization");
 const User = require("../models/User"); 
+const { AllPrivateUserNotification } = require("../models/Notifications");
 
 
 
@@ -415,6 +416,16 @@ const followingSys= async (req, res) => {
 if (!isFollowing) {
   userToFollow.followers.push(currentUser.username);
   currentUser.following.push(userToFollow.username);
+  const notification = new AllPrivateUserNotification({
+ title: 'New Follower',
+      body: ` ${currentUser.name} started following you.`,
+      receiver: userToFollow.username,
+      sender: currentUser.username,
+      type: 'follower',
+      newfollowFrom: currentUser.username,
+          });
+              await notification.save();
+
 }else {
       userToFollow.followers = userToFollow.followers.filter(
         u => u !== currentUser.username
