@@ -42,6 +42,7 @@ const orgNotificationSchema = new mongoose.Schema({
     receiver: { type: String, required: true },
     postId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post' },
         jobId: { type: mongoose.Schema.Types.ObjectId, ref: 'Job' },
+        applicationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Application' },
 
 });
 const orgNotification = mongoose.model('orgNotification', orgNotificationSchema);

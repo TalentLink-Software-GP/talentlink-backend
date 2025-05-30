@@ -51,6 +51,8 @@ const { sendApplicantNotification } = require('../services/firebaseAdmin');
                     jobId: jobId,
                     receiver:username,
                     sender:req.user.username,
+                    applicationId: savedApplication._id,
+                    read: false,
                 });
                 await notification.save();
         
@@ -118,7 +120,68 @@ username: app.userId?.username || '',
   };
 
   
+  const getApplicationById = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    
+    // Validate applicationId
+    if (!mongoose.Types.ObjectId.isValid(applicationId)) {
+      return res.status(400).json({
+        message: 'Invalid application ID format'
+      });
+    }
+
+    // Check if user is organization
+    if (req.user.role !== 'Organization') {
+      return res.status(403).json({ 
+        message: 'Access denied. Only organizations can view applications.' 
+      });
+    }
+
+    // Find the application and populate related data
+    const application = await Application.findOne({
+      _id: applicationId,
+      organizationId: req.user.id // Ensure organization can only see their own applications
+    })
+    .populate('userId', 'name _id username email')
+    .populate('jobId', 'title description requirements');
+
+    if (!application) {
+      return res.status(404).json({
+        message: 'Application not found or you do not have permission to view it'
+      });
+    }
+
+    // Format the response
+    const formattedApplication = {
+      _id: application._id,
+      jobTitle: application.jobId?.title || application.jobTitle || 'Unknown Job',
+      userName: application.userId?.name || application.userName || 'Unknown User',
+      username: application.userId?.username || application.username || '',
+      email: application.userId?.email || '',
+      status: application.status,
+      appliedDate: application.appliedDate,
+      matchScore: application.matchScore,
+      userId: application.userId?._id || application.userId || '',
+      jobId: application.jobId?._id || application.jobId || '',
+      jobDescription: application.jobId?.description || '',
+      jobRequirements: application.jobId?.requirements || [],
+      organizationId: application.organizationId
+    };
+
+    res.json(formattedApplication);
+
+  } catch (error) {
+    console.error('Error fetching application by ID:', error);
+    res.status(500).json({ 
+      message: 'Internal server error', 
+      error: error.message 
+    });
+  }
+};
+
   module.exports = {
     applicationData,
     fetchApplicationData,
+    getApplicationById,
     };
