@@ -11,7 +11,7 @@ getAppliedJob=async (req, res) => {
           receiver: username,
         })
             .sort({ createdAt: -1 })
-            .select('_id title body timestamp jobId senderId postId read'); 
+            .select('_id title body timestamp jobId senderId postId read applicationId'); 
             console.log("Response status code:", 200);
 
         res.status(200).json(notifications);
@@ -113,6 +113,14 @@ const markAsReadFunc = async (req, res) => {
     }
     if (!notification) {
       notification = await meetingNotification.findByIdAndUpdate(
+        notificationId,
+        { read: true },
+        { new: true }
+      );
+    }
+
+    if (!notification) {
+      notification = await orgNotification.findByIdAndUpdate(
         notificationId,
         { read: true },
         { new: true }

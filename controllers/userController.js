@@ -478,6 +478,7 @@ const checkFollowStatus = async (req, res) => {
 };
 
 const getUserFollowingStatus =async (req, res) => {
+  console.log("User following status route hit");
   try {
     const user = await User.findOne({ username: req.params.username }) || 
                  await Organization.findOne({ username: req.params.username });
@@ -531,6 +532,23 @@ const fetchFollowList=async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+const getUserCvByUsername=async (req, res) => {
+  try {
+    console.log("Getting CV route hit");
+    //cvUrl
+    const { username } = req.params;
+    const user = await Users.findOne({username: username});
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    return res.status(200).json({ cvUrl: user.cvUrl });
+  } catch (error) {
+    console.error('Error getting CV:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
 module.exports = {
   getUserData,
    updateAvatar, 
@@ -548,4 +566,5 @@ module.exports = {
 checkFollowStatus,
 getUserFollowingStatus,
 fetchFollowList,
+getUserCvByUsername,
     }
