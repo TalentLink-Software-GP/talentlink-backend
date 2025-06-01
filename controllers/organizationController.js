@@ -38,6 +38,35 @@ const getOrgDataWithuserName = async (req, res) => {
   }
 };
 
+const getOrgDataByuserName = async (req, res) => {
+  try {
+    console.log("🔔 Request received at getOrgDataByuserName");
+    console.log("🔍 Query parameters:", req.query);
+    console.log("🔍 Headers:", req.headers);
+    
+    const { userName } = req.query;
+
+    if (!userName) {
+      console.log("❌ Missing username in query");
+      return res.status(400).json({ message: "Missing username in query" });
+    }
+
+    console.log("🔍 Searching for organization with username:", userName);
+    const user = await Organization.findOne({ username: userName }).select("+avatarUrl");
+
+    if (!user) {
+      console.log("❌ Organization not found for username:", userName);
+      return res.status(404).json({ message: "User Not Found" });
+    }
+
+    console.log("✅ Found organization:", user);
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error("🔥 Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 //byId 
 const getProfileData = async (req, res) => {
   try {
@@ -180,6 +209,6 @@ module.exports = {
   getOrgDataWithuserName,
   saveFcmToken,
   removeFcmToken,
- 
+  getOrgDataByuserName,
   
 }

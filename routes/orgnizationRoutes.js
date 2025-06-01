@@ -6,7 +6,10 @@ const {
   getProfileData,
   updateAvatar,
   deleteAvatar,
-  getOrgDataWithuserName,saveFcmToken,removeFcmToken,
+  getOrgDataWithuserName,
+  getOrgDataByuserName,
+  saveFcmToken,
+  removeFcmToken,
 
 } = require('../controllers/organizationController')
 
@@ -16,6 +19,8 @@ const upload = require("../middleware/multer");
 const router = express.Router();
 
 router.get("/getOrgDataWithuserName" ,getOrgDataWithuserName);
+
+router.get("/getOrgDataByuserName" ,getOrgDataByuserName);
 
 
 router.post("/getOrgData", authMiddleware, getProfileData);
