@@ -3,10 +3,10 @@ const router = express.Router();
 const FreelancePost = require('../models/FreeLance');
 
 const savePost =async (req, res) => {
-  const { username, content, date } = req.body;
+  const { username, content, date,userId } = req.body;
 
   try {
-    const newPost = new FreelancePost({ username, content, date });
+    const newPost = new FreelancePost({ username, content, date,userId });
     await newPost.save();
     res.status(201).json({ message: 'Freelance post created', post: newPost });
   } catch (err) {
