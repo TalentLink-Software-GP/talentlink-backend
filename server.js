@@ -21,7 +21,7 @@ const notifications = require('./routes/notificationsRoutes');
 const setupSwagger = require("./swagger");
 const adminRoutes= require('./routes/adminRoutes');
 const ratingRoutes = require('./routes/ratingRoutes');
-
+const freeLanceRoutes = require('./routes/freeLanceRoutes');
 const User = require('./models/User');
 const { sendNotification } = require('./services/firebaseAdmin');
 const meetings= require('./routes/meetingsRoutes');
@@ -54,6 +54,7 @@ app.use("/api/notifications", notifications);
 app.use("/api/meetings", meetings);
 app.use("/api/admin", adminRoutes);
 app.use("/api/ratings", ratingRoutes);
+app.use("/api/freelance", freeLanceRoutes);
 
 // Swagger Docs
 setupSwagger(app);
